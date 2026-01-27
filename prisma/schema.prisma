@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProcessingStatus {
+  PENDING
+  PROCESSED
+  ERROR
+}
+
+enum TransactionType {
+  PAYABLE
+  RECEIVABLE
+}
+
+enum TransactionStatus {
+  PENDING
+  SETTLED
+}
+
+model SourceFile {
+  id             String           @id @default(cuid())
+  driveFileId    String           @unique
+  name           String
+  parentFolderId String?
+  modifiedTime   DateTime
+  checksum       String?
+  processedAt    DateTime?
+  status         ProcessingStatus @default(PENDING)
+  errorMessage   String?
+  transactions   Transaction[]
+
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+}
+
+model Transaction {
+  id             String            @id @default(cuid())
+  type           TransactionType
+  
+  // Relacionamento com o arquivo de origem
+  sourceFileId   String
+  sourceFile     SourceFile        @relation(fields: [sourceFileId], references: [id], onDelete: Cascade)
+
+  // Campos de Negócio
+  externalId     String?           // Número do Lançamento
+  category       String?
+  counterparty   String?           // Fornecedor ou Cliente
+  description    String?
+  unit           String?           // Unidade
+
+  // Datas
+  plannedDate    DateTime?         // Data Prevista / Vencimento Original
+  dueDate        DateTime?         // Data Vencimento (considerada para fluxo)
+  actualDate     DateTime?         // Data Pagamento / Recebimento
+
+  // Valores
+  plannedAmount  Decimal           @db.Decimal(12, 2) // Valor Original / Previsto
+  actualAmount   Decimal?          @db.Decimal(12, 2) // Valor Pago / Baixado
+  feesInterest   Decimal?          @db.Decimal(12, 2) // Juros/Multa
+  feesFine       Decimal?          @db.Decimal(12, 2) 
+  discount       Decimal?          @db.Decimal(12, 2)
+  grossAmount    Decimal?          @db.Decimal(12, 2) // Valor Bruto
+
+  status         TransactionStatus @default(PENDING)
+  
+  rawJson        Json?             // Dados originais da linha para debug
+
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@index([externalId])
+  @@index([type, dueDate])
+  @@index([type, actualDate])
+  @@index([sourceFileId])
+}
