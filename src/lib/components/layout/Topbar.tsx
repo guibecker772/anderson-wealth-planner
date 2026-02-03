@@ -1,23 +1,53 @@
-import { CalendarIcon } from 'lucide-react';
+'use client';
+
+import { Suspense } from 'react';
+import { usePathname } from 'next/navigation';
+import { DateRangePicker } from '@/components/ui/DateRangePicker';
+import { Bell, User } from 'lucide-react';
+
+// Map routes to page titles
+const pageTitles: Record<string, string> = {
+  '/dashboard': 'Visão Geral',
+  '/receitas': 'Receitas',
+  '/despesas': 'Despesas',
+  '/categorias': 'Categorias',
+  '/relatorios': 'Relatórios',
+  '/configuracoes': 'Configurações',
+};
 
 export function Topbar() {
+  const pathname = usePathname();
+  const pageTitle = pageTitles[pathname] || 'ClikFinance';
+
   return (
-    <header className="h-16 border-b bg-card/50 backdrop-blur sticky top-0 z-10 flex items-center justify-between px-6 ml-64">
+    <header className="h-16 border-b border-border/50 bg-background/80 backdrop-blur-sm fixed top-0 right-0 left-64 z-20 flex items-center justify-between px-6">
+      {/* Page Title */}
       <div>
-        {/* Breadcrumbs or Page Title Placeholder */}
-        <h1 className="text-sm font-medium text-muted-foreground">Financeiro</h1>
+        <h1 className="text-lg font-semibold text-foreground">{pageTitle}</h1>
+        <p className="text-xs text-muted-foreground">Gestão Financeira</p>
       </div>
 
-      <div className="flex items-center gap-4">
-        {/* Mock de filtro de data - será funcional nos próximos lotes */}
-        <div className="flex items-center gap-2 border rounded-md px-3 py-1.5 bg-background text-sm cursor-pointer hover:bg-muted/50">
-          <CalendarIcon className="w-4 h-4 text-muted-foreground" />
-          <span>Este Mês</span>
-        </div>
+      <div className="flex items-center gap-3">
+        {/* Global Date Range Filter */}
+        <Suspense fallback={<div className="w-[150px] h-[36px] bg-muted rounded-lg animate-pulse" />}>
+          <DateRangePicker />
+        </Suspense>
         
-        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
-          A
-        </div>
+        {/* Notification Bell */}
+        <button 
+          className="w-9 h-9 rounded-lg bg-muted/50 hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+          title="Notificações"
+        >
+          <Bell className="w-4 h-4" />
+        </button>
+        
+        {/* User Avatar */}
+        <button 
+          className="w-9 h-9 rounded-lg bg-[#022D44] flex items-center justify-center text-white hover:bg-[#022D44]/80 transition-colors"
+          title="Perfil"
+        >
+          <User className="w-4 h-4" />
+        </button>
       </div>
     </header>
   );

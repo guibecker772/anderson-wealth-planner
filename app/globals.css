@@ -1,59 +1,231 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
- 
+
+/* ==========================================================================
+   ClikFinance Design System
+   Paleta inspirada na ClikCar:
+   - Azul Petróleo (primário): #022D44
+   - Azul Escuro (background): #001F32
+   - Verde Destaque (accent): #A8CF4C
+   - Neutros: cinzas frios
+   ========================================================================== */
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Core palette - Light Mode */
+    --background: 210 20% 98%;        /* Off-white frio */
+    --foreground: 200 50% 10%;        /* Azul escuro para texto */
+    
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 200 50% 10%;
+    
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
+    --popover-foreground: 200 50% 10%;
+    
+    /* Primary: Azul Petróleo #022D44 */
+    --primary: 200 93% 14%;
+    --primary-foreground: 0 0% 100%;
+    
+    /* Secondary: Cinza frio suave */
+    --secondary: 210 20% 94%;
+    --secondary-foreground: 200 50% 15%;
+    
+    /* Muted */
+    --muted: 210 20% 94%;
+    --muted-foreground: 200 15% 45%;
+    
+    /* Accent: Verde ClikCar #A8CF4C */
+    --accent: 78 55% 55%;
+    --accent-foreground: 200 93% 14%;
+    
+    /* Destructive: Vermelho */
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    
+    /* Success: Verde (variant of accent) */
+    --success: 142 70% 45%;
+    --success-foreground: 0 0% 100%;
+    
+    /* Warning: Âmbar */
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 0%;
+    
+    /* Info: Azul claro */
+    --info: 199 89% 48%;
+    --info-foreground: 0 0% 100%;
+    
+    /* UI Elements */
+    --border: 210 20% 88%;
+    --input: 210 20% 88%;
+    --ring: 78 55% 55%;              /* Verde accent para focus */
+    --radius: 0.625rem;              /* 10px - bordas mais arredondadas */
+    
+    /* Chart colors - Clik palette */
+    --chart-1: 200 93% 14%;          /* Azul petróleo */
+    --chart-2: 78 55% 55%;           /* Verde accent */
+    --chart-3: 200 60% 35%;          /* Azul médio */
+    --chart-4: 78 45% 40%;           /* Verde escuro */
+    --chart-5: 200 30% 60%;          /* Azul claro */
   }
  
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    /* Core palette - Dark Mode (ClikCar inspired) */
+    --background: 202 85% 8%;        /* #001F32 aprox */
+    --foreground: 210 30% 96%;
+    
+    --card: 202 80% 11%;             /* Um pouco mais claro que bg */
+    --card-foreground: 210 30% 96%;
+    
+    --popover: 202 80% 11%;
+    --popover-foreground: 210 30% 96%;
+    
+    /* Primary: Verde Accent #A8CF4C (destaque em dark) */
+    --primary: 78 55% 55%;
+    --primary-foreground: 200 93% 10%;
+    
+    /* Secondary */
+    --secondary: 202 60% 18%;
+    --secondary-foreground: 210 30% 90%;
+    
+    /* Muted */
+    --muted: 202 50% 20%;
+    --muted-foreground: 210 20% 60%;
+    
+    /* Accent: Verde ClikCar (mais vibrante em dark) */
+    --accent: 78 60% 50%;
+    --accent-foreground: 200 93% 8%;
+    
+    /* Destructive */
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 100%;
+    
+    /* Success */
+    --success: 142 65% 45%;
+    --success-foreground: 0 0% 100%;
+    
+    /* Warning */
+    --warning: 38 85% 50%;
+    --warning-foreground: 0 0% 0%;
+    
+    /* Info */
+    --info: 199 80% 55%;
+    --info-foreground: 0 0% 100%;
+    
+    /* UI Elements */
+    --border: 202 50% 22%;
+    --input: 202 50% 22%;
+    --ring: 78 55% 55%;
+    
+    /* Chart colors */
+    --chart-1: 78 55% 55%;           /* Verde accent */
+    --chart-2: 200 70% 50%;          /* Azul médio */
+    --chart-3: 78 40% 65%;           /* Verde claro */
+    --chart-4: 200 50% 40%;          /* Azul escuro */
+    --chart-5: 142 50% 50%;          /* Verde success */
   }
 }
- 
+
 @layer base {
   * {
     @apply border-border;
   }
+  
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+  
+  /* Improved focus states for accessibility */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+}
+
+/* ==========================================================================
+   Custom Component Styles
+   ========================================================================== */
+
+@layer components {
+  /* Modern Card Style */
+  .card-modern {
+    @apply bg-card rounded-xl border shadow-sm hover:shadow-md transition-shadow duration-200;
+  }
+  
+  /* Stat Card (Dashboard) */
+  .stat-card {
+    @apply card-modern p-6;
+  }
+  
+  .stat-card-value {
+    @apply text-3xl font-bold tracking-tight;
+  }
+  
+  .stat-card-label {
+    @apply text-sm text-muted-foreground mt-1;
+  }
+  
+  /* Table enhancements */
+  .table-modern {
+    @apply w-full text-sm;
+  }
+  
+  .table-modern thead {
+    @apply bg-muted/50;
+  }
+  
+  .table-modern th {
+    @apply px-4 py-3 text-left font-semibold text-muted-foreground uppercase text-xs tracking-wider;
+  }
+  
+  .table-modern td {
+    @apply px-4 py-3 border-b border-border/50;
+  }
+  
+  .table-modern tbody tr {
+    @apply hover:bg-muted/30 transition-colors;
+  }
+  
+  /* Empty State */
+  .empty-state {
+    @apply flex flex-col items-center justify-center py-12 text-center;
+  }
+  
+  .empty-state-icon {
+    @apply w-12 h-12 text-muted-foreground/50 mb-4;
+  }
+  
+  .empty-state-title {
+    @apply text-lg font-medium text-foreground;
+  }
+  
+  .empty-state-description {
+    @apply text-sm text-muted-foreground mt-1 max-w-sm;
+  }
+  
+  /* Sidebar active state */
+  .nav-item-active {
+    @apply bg-accent/15 text-accent border-l-2 border-accent;
+  }
+}
+
+/* ==========================================================================
+   Utility Animations
+   ========================================================================== */
+
+@layer utilities {
+  .animate-in {
+    animation: animateIn 0.2s ease-out;
+  }
+  
+  @keyframes animateIn {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }

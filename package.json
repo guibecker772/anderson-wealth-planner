@@ -4,13 +4,17 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "db:push": "prisma db push",
+    "db:generate": "prisma generate",
     "db:studio": "prisma studio",
+    "db:reset": "prisma migrate reset --force",
     "seed": "tsx src/scripts/seed.ts",
-    "ingest:local": "tsx src/scripts/ingestLocal.ts"
+    "ingest:local": "tsx src/scripts/ingestLocal.ts",
+    "admin:remove-seed": "tsx src/scripts/removeSeed.ts",
+    "clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true}); require('fs').rmSync('node_modules/.prisma',{recursive:true,force:true});\""
   },
   "dependencies": {
     "@prisma/client": "^5.10.0",

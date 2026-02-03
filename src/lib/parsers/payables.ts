@@ -3,7 +3,8 @@ import { mapRowToTransaction, ParsedTransaction } from './common';
 
 export async function parsePayables(buffer: Buffer): Promise<ParsedTransaction[]> {
   const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.load(buffer);
+  // Use Uint8Array for compatibility with Node.js 22+ Buffer types
+  await workbook.xlsx.load(new Uint8Array(buffer) as unknown as ExcelJS.Buffer);
   const transactions: ParsedTransaction[] = [];
 
   const ignoredSheets = ['Gráfico', 'Relatório', 'Resumo', 'Dashboard'];

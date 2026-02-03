@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useRouter, useSearchParams } from "next/navigation";
+import { getTransactionStatusInfo, type BadgeVariant } from "@/lib/i18n/statusLabels";
+import { FileX } from "lucide-react";
 
 interface TransactionTableProps {
   data: any[];
@@ -25,64 +27,94 @@ export function TransactionTable({ data, page, totalPages, type }: TransactionTa
 
   return (
     <div className="space-y-4">
-      <div className="rounded-md border">
+      <div className="rounded-xl border bg-card overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Vencimento</TableHead>
-              <TableHead>{type === 'PAYABLE' ? 'Fornecedor' : 'Cliente'}</TableHead>
-              <TableHead>Categoria</TableHead>
-              <TableHead>Valor Previsto</TableHead>
-              <TableHead>Valor Real</TableHead>
-              <TableHead>Status</TableHead>
+            <TableRow className="bg-muted/50 hover:bg-muted/50">
+              <TableHead className="font-semibold">Vencimento</TableHead>
+              <TableHead className="font-semibold">{type === 'PAYABLE' ? 'Fornecedor' : 'Cliente'}</TableHead>
+              <TableHead className="font-semibold">Categoria</TableHead>
+              <TableHead className="font-semibold text-right">Valor Previsto</TableHead>
+              <TableHead className="font-semibold text-right">Valor Real</TableHead>
+              <TableHead className="font-semibold">Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.map((tx) => (
-              <TableRow key={tx.id}>
-                <TableCell>{formatDate(tx.dueDate)}</TableCell>
-                <TableCell>{tx.counterparty || '-'}</TableCell>
-                <TableCell>{tx.category || '-'}</TableCell>
-                <TableCell>{formatCurrency(Number(tx.plannedAmount))}</TableCell>
-                <TableCell>{tx.actualAmount ? formatCurrency(Number(tx.actualAmount)) : '-'}</TableCell>
-                <TableCell>
-                  <Badge variant={tx.status === 'SETTLED' ? 'success' : 'warning'}>
-                    {tx.status}
-                  </Badge>
-                </TableCell>
-              </TableRow>
-            ))}
+            {data.map((tx) => {
+              const statusInfo = getTransactionStatusInfo(tx.status);
+              
+              return (
+                <TableRow key={tx.id} className="hover:bg-muted/30 transition-colors">
+                  <TableCell className="font-medium">{formatDate(tx.dueDate)}</TableCell>
+                  <TableCell>{tx.counterparty || <span className="text-muted-foreground">—</span>}</TableCell>
+                  <TableCell>
+                    {tx.category ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-secondary text-secondary-foreground text-xs">
+                        {tx.category}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right font-mono">
+                    {formatCurrency(Number(tx.plannedAmount))}
+                  </TableCell>
+                  <TableCell className="text-right font-mono">
+                    {tx.actualAmount ? formatCurrency(Number(tx.actualAmount)) : <span className="text-muted-foreground">—</span>}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={statusInfo.variant as any}>
+                      {statusInfo.label}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
             {data.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                  Nenhum lançamento encontrado.
+                <TableCell colSpan={6} className="h-32">
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <FileX className="w-10 h-10 text-muted-foreground/40 mb-3" />
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Nenhum lançamento encontrado
+                    </p>
+                    <p className="text-xs text-muted-foreground/70 mt-1">
+                      Tente ajustar os filtros ou o período selecionado
+                    </p>
+                  </div>
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </div>
-      <div className="flex justify-end gap-2">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={() => handlePageChange(page - 1)} 
-          disabled={page <= 1}
-        >
-          Anterior
-        </Button>
-        <span className="flex items-center px-3 text-sm text-muted-foreground">
-          Página {page} de {totalPages}
-        </span>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={() => handlePageChange(page + 1)} 
-          disabled={page >= totalPages}
-        >
-          Próximo
-        </Button>
-      </div>
+      
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            Página {page} de {totalPages}
+          </p>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => handlePageChange(page - 1)} 
+              disabled={page <= 1}
+            >
+              Anterior
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => handlePageChange(page + 1)} 
+              disabled={page >= totalPages}
+            >
+              Próximo
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

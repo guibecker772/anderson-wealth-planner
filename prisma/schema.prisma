@@ -23,6 +23,11 @@ enum TransactionStatus {
   SETTLED
 }
 
+enum SourceType {
+  DRIVE
+  LOCAL
+}
+
 model SourceFile {
   id             String           @id @default(cuid())
   driveFileId    String           @unique
@@ -33,6 +38,7 @@ model SourceFile {
   processedAt    DateTime?
   status         ProcessingStatus @default(PENDING)
   errorMessage   String?
+  source         SourceType       @default(LOCAL)
   transactions   Transaction[]
 
   createdAt      DateTime         @default(now())
@@ -49,6 +55,7 @@ model Transaction {
 
   // Campos de Negócio
   externalId     String?           // Número do Lançamento
+  rowHash        String?           @unique // Hash para deduplicação (sourceFileHash + sheet + row + date + amount + desc)
   category       String?
   counterparty   String?           // Fornecedor ou Cliente
   description    String?

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Search, X, Calendar } from 'lucide-react';
+import { Search, X, SlidersHorizontal } from 'lucide-react';
 
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { parseDateRangeFromParams, formatDateDisplay } from '@/lib/dateRange';
+import { DateRangeBadge } from '@/components/ui/DateRangePicker';
+import { transactionStatusOptions } from '@/lib/i18n/statusLabels';
 
 export function TransactionFilters() {
   const router = useRouter();
@@ -22,16 +25,15 @@ export function TransactionFilters() {
   const [query, setQuery] = useState(searchParams.get('q') || '');
 
   const currentStatus = searchParams.get('status') || 'ALL';
-  const currentFrom = searchParams.get('from') || '';
-  const currentTo = searchParams.get('to') || '';
   const currentPage = Number(searchParams.get('page') || '1');
+  
+  // Get current date range from URL (synced with global DateRangePicker in Topbar)
+  const dateRange = parseDateRangeFromParams(searchParams);
 
   const showClearButton = useMemo(() => {
     return Boolean(
       searchParams.get('q') ||
         searchParams.get('status') ||
-        searchParams.get('from') ||
-        searchParams.get('to') ||
         currentPage > 1
     );
   }, [searchParams, currentPage]);
@@ -64,110 +66,66 @@ export function TransactionFilters() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
-  const handleDatePreset = (preset: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    const today = new Date();
-
-    const setRange = (from: Date, to: Date) => {
-      params.set('from', from.toISOString().split('T')[0]);
-      params.set('to', to.toISOString().split('T')[0]);
-      params.set('page', '1');
-      pushParams(params);
-    };
-
-    switch (preset) {
-      case 'today': {
-        setRange(today, today);
-        return;
-      }
-      case '7days': {
-        const from = new Date(today);
-        from.setDate(today.getDate() - 7);
-        setRange(from, today);
-        return;
-      }
-      case 'thisMonth': {
-        const from = new Date(today.getFullYear(), today.getMonth(), 1);
-        const to = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-        setRange(from, to);
-        return;
-      }
-      case 'lastMonth': {
-        const from = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-        const to = new Date(today.getFullYear(), today.getMonth(), 0);
-        setRange(from, to);
-        return;
-      }
-      case 'clear': {
-        params.delete('from');
-        params.delete('to');
-        params.set('page', '1');
-        pushParams(params);
-        return;
-      }
-      default:
-        return;
-    }
-  };
-
   const clearAll = () => {
-    router.push(pathname);
+    // Keep date range when clearing, only clear other filters
+    const params = new URLSearchParams();
+    params.set('from', dateRange.from);
+    params.set('to', dateRange.to);
+    router.push(`${pathname}?${params.toString()}`);
+    setQuery('');
   };
 
   return (
-    <div className="flex flex-col md:flex-row gap-4 mb-6 bg-card p-4 rounded-lg border shadow-sm">
+    <div className="flex flex-col md:flex-row gap-3 p-4 bg-card rounded-xl border shadow-sm">
+      {/* Filter Icon */}
+      <div className="hidden md:flex items-center text-muted-foreground">
+        <SlidersHorizontal className="w-4 h-4" />
+      </div>
+      
       {/* Busca */}
       <div className="relative flex-1">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Buscar descrição, fornecedor..."
-          className="pl-8"
+          className="pl-9 bg-background"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
       </div>
 
-      {/* Status */}
+      {/* Status - Usando opções traduzidas */}
       <div className="w-full md:w-[180px]">
         <Select
           value={currentStatus}
           onValueChange={(val) => updateParam('status', val === 'ALL' ? null : val)}
         >
-          <SelectTrigger>
+          <SelectTrigger className="bg-background">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="ALL">Todos</SelectItem>
-            <SelectItem value="PENDING">Pendente</SelectItem>
-            <SelectItem value="SETTLED">Realizado</SelectItem>
+            {transactionStatusOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
 
-      {/* Datas (Presets) */}
-      <div className="w-full md:w-[220px]">
-        <Select onValueChange={handleDatePreset}>
-          <SelectTrigger>
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 opacity-50" />
-              <span className="truncate">
-                {currentFrom ? `${currentFrom} → ${currentTo || currentFrom}` : 'Período'}
-              </span>
-            </div>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="today">Hoje</SelectItem>
-            <SelectItem value="7days">Últimos 7 dias</SelectItem>
-            <SelectItem value="thisMonth">Este mês</SelectItem>
-            <SelectItem value="lastMonth">Mês passado</SelectItem>
-            <SelectItem value="clear">Limpar datas</SelectItem>
-          </SelectContent>
-        </Select>
+      {/* Date Range Badge (shows current global filter) */}
+      <div className="flex items-center">
+        <DateRangeBadge from={dateRange.from} to={dateRange.to} />
       </div>
 
-      {/* Limpar tudo */}
+      {/* Limpar filtros (exceto datas) */}
       {showClearButton && (
-        <Button variant="ghost" size="icon" onClick={clearAll} title="Limpar filtros">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={clearAll} 
+          title="Limpar filtros"
+          className="text-muted-foreground hover:text-foreground"
+        >
           <X className="h-4 w-4" />
         </Button>
       )}
