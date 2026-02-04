@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { parseDateRangeFromSearchParams, getDefaultDateRange } from '@/lib/dateRange';
+import { parseDateRangeFromSearchParams } from '@/lib/dateRange';
 import { getDashboardData } from '@/lib/analytics/dashboard';
 
 export async function GET(req: NextRequest) {

@@ -11,7 +11,7 @@ export async function GET() {
     // Check DB connection
     await db.$queryRaw`SELECT 1`;
     return NextResponse.json({ status: 'ok', db: 'connected' }, { status: 200 });
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json({ status: 'error', message: 'Database disconnected' }, { status: 500 });
   }
 }

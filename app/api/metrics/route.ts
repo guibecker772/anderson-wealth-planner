@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { 
   getMockMetrics, 
   getEmptyMetricsResponse, 
-  useMockData 
+  shouldUseMockData 
 } from '@/lib/db-safe';
 
 export async function GET(req: NextRequest) {
@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   const to = searchParams.get('to') ? new Date(searchParams.get('to')!) : new Date();
 
   // Check if we should use mock data (no DATABASE_URL or USE_MOCK_DATA=true)
-  if (useMockData()) {
+  if (shouldUseMockData()) {
     const mockResult = getMockMetrics({ from, to });
     return NextResponse.json(mockResult);
   }

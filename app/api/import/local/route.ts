@@ -54,16 +54,17 @@ export async function POST(request: NextRequest) {
       errors: summary.errors
     });
     
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errMsg = error instanceof Error ? error.message : 'Erro interno ao executar importação';
     console.error('Erro na importação local:', error);
     return NextResponse.json(
       { 
         ok: false, 
-        message: error.message || 'Erro interno ao executar importação',
+        message: errMsg,
         importedFiles: 0,
         importedRows: 0,
         skippedFiles: 0,
-        errors: [{ file: 'general', message: error.message }]
+        errors: [{ file: 'general', message: errMsg }]
       },
       { status: 500 }
     );

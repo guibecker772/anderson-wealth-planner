@@ -3,23 +3,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Calendar, ChevronDown, X } from 'lucide-react';
-import { format, isValid, parse } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { 
   getPresetRange, 
   getDateRangeLabel, 
   parseDateRangeFromParams,
-  formatDateString,
   formatDateDisplay,
   type DatePreset,
   type DateRangeStrings,
@@ -27,10 +17,9 @@ import {
 
 interface DateRangePickerProps {
   className?: string;
-  showLabel?: boolean;
 }
 
-export function DateRangePicker({ className = '', showLabel = true }: DateRangePickerProps) {
+export function DateRangePicker({ className = '' }: DateRangePickerProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();

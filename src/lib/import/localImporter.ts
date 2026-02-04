@@ -2,12 +2,20 @@ import fs from 'fs/promises';
 import path from 'path';
 import crypto from 'crypto';
 import ExcelJS from 'exceljs';
+import { Prisma } from '@prisma/client';
 import { db } from '../db';
 import { parseExcelDate, parseCurrency, parseBoolean } from '../parsers/common';
+import { 
+  loadActiveRules, 
+  resolveCategoryByRules, 
+  buildRawLabel,
+  type NormalizationRule 
+} from '../normalization/categoryNormalization';
 
 // Use string literals instead of Prisma enums for compatibility
 type TransactionType = 'PAYABLE' | 'RECEIVABLE';
 type TransactionStatus = 'PENDING' | 'SETTLED';
+type CategorySource = 'RAW' | 'NORMALIZED' | 'MANUAL';
 
 // ============================================================================
 // TYPES
@@ -49,8 +57,13 @@ interface ParsedRow {
   grossAmount: number | null;
   status: TransactionStatus;
   type: TransactionType;
-  rawJson: any;
+  rawJson: Record<string, unknown>;
   rowHash: string;
+  // Category normalization fields
+  rawLabel: string | null;
+  categorySource: CategorySource;
+  normalizedByRuleId: string | null;
+  normalizedAt: Date | null;
 }
 
 // ============================================================================
@@ -300,11 +313,18 @@ export async function parseWorkbook(
       const description = getCellValue(headerMap['description']);
       const counterparty = getCellValue(headerMap['counterparty']);
       
-      // Categoria: usar coluna se existir, senão usar nome da aba
-      let category = getCellValue(headerMap['category']);
-      if (!category) {
-        category = sheetName !== 'Relatório' ? sheetName : null;
+      // Categoria original do Excel: usar coluna se existir, senão usar nome da aba
+      let categoryFromExcel = getCellValue(headerMap['category']);
+      if (!categoryFromExcel) {
+        categoryFromExcel = sheetName !== 'Relatório' ? sheetName : null;
       }
+      
+      // Build rawLabel for normalization (deterministic concatenation)
+      const rawLabel = buildRawLabel({
+        counterparty: counterparty ? String(counterparty) : null,
+        description: description ? String(description) : null,
+        category: categoryFromExcel ? String(categoryFromExcel) : null,
+      });
       
       // Gerar rowHash para deduplicação
       const rowHash = computeRowHash(
@@ -318,7 +338,7 @@ export async function parseWorkbook(
       
       transactions.push({
         externalId: externalId ? String(externalId) : null,
-        category: category ? String(category) : null,
+        category: categoryFromExcel ? String(categoryFromExcel) : null,
         counterparty: counterparty ? String(counterparty) : null,
         description: description ? String(description) : null,
         unit: getCellValue(headerMap['unit']) ? String(getCellValue(headerMap['unit'])) : null,
@@ -335,8 +355,13 @@ export async function parseWorkbook(
         type: fileType,
         rawJson: Object.fromEntries(
           headers.map((h, i) => [h, getCellValue(i)])
-        ),
-        rowHash
+        ) as Record<string, unknown>,
+        rowHash,
+        // Normalization fields (will be updated after rules are applied)
+        rawLabel: rawLabel || null,
+        categorySource: 'RAW',
+        normalizedByRuleId: null,
+        normalizedAt: null,
       });
     });
   }
@@ -438,9 +463,35 @@ export async function importFile(
     const newTransactions = transactions.filter(t => !existingHashes.has(t.rowHash));
     const skippedRows = transactions.length - newTransactions.length;
     
+    // Load normalization rules once for all transactions
+    const normalizationRules = await loadActiveRules(db);
+    const now = new Date();
+    
+    // Apply normalization rules to each new transaction
+    const normalizedTransactions = newTransactions.map(t => {
+      if (t.rawLabel && normalizationRules.length > 0) {
+        const scope = t.type === 'PAYABLE' ? 'EXPENSE' : 'INCOME';
+        const result = resolveCategoryByRules(normalizationRules as NormalizationRule[], {
+          rawLabel: t.rawLabel,
+          scope,
+        });
+        
+        if (result.categoryId && result.ruleId) {
+          return {
+            ...t,
+            category: result.categoryId,
+            categorySource: 'NORMALIZED' as CategorySource,
+            normalizedByRuleId: result.ruleId,
+            normalizedAt: now,
+          };
+        }
+      }
+      return t;
+    });
+    
     // Inserir novas transações
-    if (newTransactions.length > 0) {
-      const data = newTransactions.map(t => ({
+    if (normalizedTransactions.length > 0) {
+      const data = normalizedTransactions.map(t => ({
         sourceFileId: sourceFile.id,
         type: t.type,
         externalId: t.externalId,
@@ -459,7 +510,12 @@ export async function importFile(
         discount: t.discount !== null ? String(t.discount) : null,
         grossAmount: t.grossAmount !== null ? String(t.grossAmount) : null,
         status: t.status,
-        rawJson: t.rawJson
+        rawJson: t.rawJson as unknown as Prisma.InputJsonValue,
+        // Normalization fields
+        rawLabel: t.rawLabel,
+        categorySource: t.categorySource,
+        normalizedByRuleId: t.normalizedByRuleId,
+        normalizedAt: t.normalizedAt,
       }));
       
       await db.transaction.createMany({ data });
@@ -468,7 +524,7 @@ export async function importFile(
     // Mover arquivo para processed/
     await moveFile(filePath, path.join(normalizedBasePath, 'processed'));
     
-    return { success: true, importedRows: newTransactions.length, skippedRows };
+    return { success: true, importedRows: normalizedTransactions.length, skippedRows };
     
   } catch (err: any) {
     // Registrar erro no SourceFile
@@ -611,7 +667,7 @@ export async function getFolderStatus(basePath: string): Promise<FolderStatus> {
       status.lastFileName = lastFile.name;
     }
     
-  } catch (err: any) {
+  } catch (_err: unknown) {
     // Pasta não existe ou erro de acesso
     status.exists = false;
   }

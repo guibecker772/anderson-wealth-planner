@@ -21,7 +21,7 @@ export async function isDbAvailable(): Promise<boolean> {
 /**
  * Check if mock mode is enabled via environment variable
  */
-export function useMockData(): boolean {
+export function shouldUseMockData(): boolean {
   return process.env.USE_MOCK_DATA === 'true' || !process.env.DATABASE_URL;
 }
 

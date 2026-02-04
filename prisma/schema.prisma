@@ -28,6 +28,24 @@ enum SourceType {
   LOCAL
 }
 
+enum MatchType {
+  EXACT
+  CONTAINS
+  REGEX
+}
+
+enum NormalizationScope {
+  EXPENSE
+  INCOME
+  BOTH
+}
+
+enum CategorySource {
+  RAW
+  NORMALIZED
+  MANUAL
+}
+
 model SourceFile {
   id             String           @id @default(cuid())
   driveFileId    String           @unique
@@ -78,6 +96,13 @@ model Transaction {
   
   rawJson        Json?             // Dados originais da linha para debug
 
+  // Campos de normalização de categoria
+  rawLabel            String?         // Texto usado para matching de regras (derivado do import)
+  categorySource      CategorySource  @default(RAW)
+  normalizedByRuleId  String?         // FK para regra que categorizou
+  normalizedByRule    CategoryNormalizationRule? @relation(fields: [normalizedByRuleId], references: [id], onDelete: SetNull)
+  normalizedAt        DateTime?       // Quando a normalização foi aplicada
+
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
 
@@ -85,4 +110,29 @@ model Transaction {
   @@index([type, dueDate])
   @@index([type, actualDate])
   @@index([sourceFileId])
+  @@index([categorySource])
+  @@index([normalizedByRuleId])
+}
+
+// ============================================================================
+// CATEGORY NORMALIZATION
+// ============================================================================
+
+model CategoryNormalizationRule {
+  id            String              @id @default(cuid())
+  fromPattern   String              // Padrão a ser buscado (texto ou regex)
+  matchType     MatchType           @default(CONTAINS)
+  scope         NormalizationScope  @default(BOTH)
+  toCategory    String              // Categoria de destino (nome padronizado)
+  priority      Int                 @default(0)
+  active        Boolean             @default(true)
+  
+  // Auditoria
+  transactions  Transaction[]       // Transações normalizadas por esta regra
+  
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@index([active, scope])
+  @@index([priority])
 }

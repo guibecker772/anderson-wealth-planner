@@ -28,7 +28,7 @@ export default async function DashboardPage() {
   try {
       metrics = await getDashboardData();
       recent = await getRecentTransactions();
-  } catch (e) {
+  } catch (_e) {
       return <div>Erro ao carregar dashboard. Certifique-se que o servidor está rodando.</div>;
   }
 

@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { 
@@ -11,13 +10,17 @@ import {
   Tags, 
   FileText, 
   Settings,
-  TrendingUp
+  TrendingUp,
+  AlertTriangle,
+  Users,
 } from 'lucide-react';
 
 const navItems = [
   { href: '/dashboard', label: 'Visão Geral', icon: LayoutDashboard },
   { href: '/receitas', label: 'Receitas', icon: ArrowUpCircle },
   { href: '/despesas', label: 'Despesas', icon: ArrowDownCircle },
+  { href: '/multas', label: 'Multas', icon: AlertTriangle },
+  { href: '/investidores', label: 'Investidores', icon: Users },
   { href: '/categorias', label: 'Categorias', icon: Tags },
   { href: '/relatorios', label: 'Relatórios', icon: FileText },
   { href: '/configuracoes', label: 'Configurações', icon: Settings },

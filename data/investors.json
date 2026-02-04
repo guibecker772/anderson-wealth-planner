@@ -1,0 +1,30 @@
+{
+  "investors": [
+    {
+      "id": "inv-001",
+      "name": "Investidor Exemplo 1",
+      "vehicles": ["ABC1234", "DEF5678"],
+      "email": null,
+      "phone": null,
+      "notes": "Dados de exemplo - substituir por dados reais"
+    },
+    {
+      "id": "inv-002",
+      "name": "Investidor Exemplo 2",
+      "vehicles": ["GHI9012", "JKL3456"],
+      "email": null,
+      "phone": null,
+      "notes": "Dados de exemplo - substituir por dados reais"
+    }
+  ],
+  "_meta": {
+    "description": "Mapeamento de investidores para veículos (placas)",
+    "lastUpdated": "2026-02-03",
+    "instructions": [
+      "Edite este arquivo para adicionar investidores reais",
+      "O campo 'vehicles' deve conter as placas dos veículos vinculados ao investidor",
+      "O formato de placa deve ser uppercase sem hífen (ex: ABC1234)",
+      "Após editar, reinicie o servidor para aplicar as mudanças"
+    ]
+  }
+}

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { 
   getMockTransactions, 
   getEmptyTransactionsResponse, 
-  useMockData,
+  shouldUseMockData,
   type TransactionFilters 
 } from '@/lib/db-safe';
 import { parseDateRangeFromSearchParams, dateRangeToDbFilter } from '@/lib/dateRange';
@@ -40,7 +41,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Check if we should use mock data (no DATABASE_URL or USE_MOCK_DATA=true)
-  if (useMockData()) {
+  if (shouldUseMockData()) {
     const mockResult = getMockTransactions(filters);
     return NextResponse.json(mockResult);
   }
@@ -49,7 +50,7 @@ export async function GET(req: NextRequest) {
   try {
     const { db } = await import('@/lib/db');
 
-    const where: any = {};
+    const where: Prisma.TransactionWhereInput = {};
 
     if (type) where.type = type;
     if (status) where.status = status;

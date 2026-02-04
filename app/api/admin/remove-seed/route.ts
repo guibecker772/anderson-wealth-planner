@@ -8,7 +8,7 @@ import * as path from 'path';
  * Removes the "Seed Data.xlsx" file and all its associated transactions from the database.
  * Also moves the file to an "archived" folder if it exists in LOCAL_IMPORT_FOLDER.
  */
-export async function DELETE(req: NextRequest) {
+export async function DELETE(_req: NextRequest) {
   // Check if database is configured
   if (!process.env.DATABASE_URL) {
     return NextResponse.json(

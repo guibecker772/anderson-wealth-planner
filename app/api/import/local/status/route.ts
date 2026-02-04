@@ -29,11 +29,12 @@ export async function GET() {
       status
     });
     
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errMsg = error instanceof Error ? error.message : 'Erro ao verificar status';
     console.error('Erro ao verificar status:', error);
     return NextResponse.json({
       ok: false,
-      message: error.message || 'Erro ao verificar status',
+      message: errMsg,
       status: null
     });
   }
@@ -66,11 +67,12 @@ export async function POST() {
       filesInInbox: files.length
     });
     
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errMsg = error instanceof Error ? error.message : 'Erro desconhecido';
     console.error('Erro ao testar conexão:', error);
     return NextResponse.json({
       ok: false,
-      message: `Erro: ${error.message}`
+      message: `Erro: ${errMsg}`
     });
   }
 }

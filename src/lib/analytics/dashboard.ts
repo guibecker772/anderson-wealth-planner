@@ -7,7 +7,6 @@
  * - Top expense categories
  */
 
-import { Prisma } from '@prisma/client';
 import { dateRangeToDbFilter, type DateRangeStrings, getBrazilNow, formatDateString } from '@/lib/dateRange';
 
 // Types for dashboard data

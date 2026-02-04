@@ -12,7 +12,7 @@ export default function ConfiguracoesPage() {
         <div className="border rounded-xl p-6 bg-card space-y-4">
           <h3 className="font-semibold text-lg">Integração Google Drive (API)</h3>
           <p className="text-sm text-muted-foreground">
-            Configure as credenciais da Service Account para acessar a pasta "Financeiro Anderson".
+            Configure as credenciais da Service Account para acessar a pasta &quot;Financeiro Anderson&quot;.
             <br />
             <span className="text-amber-600">⚠️ Não implementado. Use a Importação Local acima.</span>
           </p>

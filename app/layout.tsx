@@ -43,7 +43,8 @@ export default function RootLayout({
       )}>
         <Sidebar />
         <Topbar />
-        <main className="ml-64 pt-16 p-6 lg:p-8 min-h-screen">
+        {/* Main content area - offset by sidebar (ml-64) and header (pt-16 = 64px) */}
+        <main className="ml-64 pt-16 p-6 lg:p-8 min-h-screen relative z-0">
           <div className="max-w-7xl mx-auto animate-in">
             {children}
           </div>

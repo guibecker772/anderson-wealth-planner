@@ -1,8 +1,9 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/lib/components/layout/ui/placeholder-ui";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/lib/components/layout/ui/table";
 import { Badge } from "@/lib/components/layout/ui/badge";
-import { AlertCircle, ArrowRight, Info, Calendar, Tags, FileX } from "lucide-react";
+import { ArrowRight, Info, Calendar, Tags, FileX } from "lucide-react";
 import { parseDateRangeFromSearchParams, dateRangeToDbFilter, formatDateDisplay } from "@/lib/dateRange";
+import { NormalizationRulesManager } from "@/components/categories/NormalizationRulesManager";
+import { NormalizationApplyButton } from "@/components/categories/NormalizationApplyButton";
 
 async function getCategoryData(searchParams: { from?: string; to?: string }) {
   // Fallback para modo sem DATABASE_URL
@@ -37,7 +38,7 @@ async function getCategoryData(searchParams: { from?: string; to?: string }) {
     });
 
     return { ranking, isMock: false, dateRange };
-  } catch (error) {
+  } catch {
     return { ranking: [], isMock: false, dateRange: parseDateRangeFromSearchParams(searchParams) };
   }
 }
@@ -125,33 +126,21 @@ export default async function CategoriasPage({ searchParams }: { searchParams: {
           </div>
         </div>
 
-        {/* Card: De/Para (Preview) */}
-        <div className="md:col-span-1 rounded-xl border border-dashed bg-card/50 shadow-sm">
-          <div className="p-6 border-b border-dashed">
-            <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-foreground">Normalização (De/Para)</h3>
-              <Badge variant="outline" className="text-xs">Em Breve</Badge>
+        {/* Card: Normalização (De/Para) - Funcional */}
+        <div className="md:col-span-1 rounded-xl border bg-card shadow-sm">
+          <div className="p-6 border-b">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-foreground">Normalização (De/Para)</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Mapeie textos do Excel para categorias padrões
+                </p>
+              </div>
+              <NormalizationApplyButton />
             </div>
-            <p className="text-sm text-muted-foreground mt-1">
-              Mapeie nomes do Excel para categorias padrões
-            </p>
           </div>
-          <div className="p-6 space-y-4 opacity-60">
-            <div className="flex items-center gap-2 text-sm border p-3 rounded-lg bg-muted/20">
-              <span className="line-through text-red-400">Pgto Energia</span>
-              <ArrowRight className="w-4 h-4 text-muted-foreground" />
-              <span className="font-medium text-emerald-600">Energia Elétrica</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm border p-3 rounded-lg bg-muted/20">
-              <span className="line-through text-red-400">Internet VIVO</span>
-              <ArrowRight className="w-4 h-4 text-muted-foreground" />
-              <span className="font-medium text-emerald-600">Telecomunicações</span>
-            </div>
-             
-            <div className="flex items-center gap-2 p-4 bg-amber-500/10 rounded-lg text-amber-700 text-sm">
-              <AlertCircle className="w-5 h-5 flex-shrink-0" />
-              <p>Funcionalidade planejada para versões futuras. Por enquanto, o sistema usa o nome exato do Excel.</p>
-            </div>
+          <div className="p-6">
+            <NormalizationRulesManager />
           </div>
         </div>
       </div>

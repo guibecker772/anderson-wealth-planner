@@ -1,9 +1,13 @@
 import { Suspense } from "react";
 import { TransactionTable } from "@/components/transactions/TransactionTable";
 import { TransactionFilters } from "@/components/transactions/TransactionFilters";
+import { TransactionAnalyticsPanel } from "@/components/analytics/TransactionAnalyticsPanel";
+import { MetricsSummaryCards } from "@/components/metrics/MetricsSummaryCards";
 import { Badge } from "@/components/ui/badge";
 import { parseDateRangeFromSearchParams, dateRangeToDbFilter } from "@/lib/dateRange";
 import { db } from "@/lib/db";
+
+import { Prisma } from '@prisma/client';
 
 async function getReceitas(searchParams: Record<string, string | undefined>) {
   const page = parseInt(searchParams.page || '1');
@@ -14,7 +18,7 @@ async function getReceitas(searchParams: Record<string, string | undefined>) {
   const dbDateFilter = dateRangeToDbFilter(dateRange);
   
   // Construir filtro where
-  const where: any = {
+  const where: Prisma.TransactionWhereInput = {
     type: 'RECEIVABLE',
     dueDate: {
       gte: dbDateFilter.gte,
@@ -24,7 +28,7 @@ async function getReceitas(searchParams: Record<string, string | undefined>) {
   
   // Filtros opcionais
   if (searchParams.status && searchParams.status !== 'ALL') {
-    where.status = searchParams.status;
+    where.status = searchParams.status as 'PENDING' | 'SETTLED';
   }
   if (searchParams.category) {
     where.category = searchParams.category;
@@ -75,9 +79,9 @@ async function getReceitas(searchParams: Record<string, string | undefined>) {
   }
 }
 
-export default async function ReceitasPage({ searchParams }: { searchParams: any }) {
+export default async function ReceitasPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
   const { data, meta } = await getReceitas(searchParams);
-  const totalPagina = data.reduce((acc: number, item: any) => acc + Number(item.plannedAmount || 0), 0);
+  const dateRange = parseDateRangeFromSearchParams(searchParams);
 
   return (
     <div className="space-y-6">
@@ -92,13 +96,17 @@ export default async function ReceitasPage({ searchParams }: { searchParams: any
             Controle suas entradas e previsões de faturamento
           </p>
         </div>
-        <div className="bg-emerald-500/10 px-4 py-2.5 rounded-lg border border-emerald-500/20">
-          <p className="text-xs text-muted-foreground">Total desta página</p>
-          <p className="text-lg font-bold text-emerald-600">
-            R$ {totalPagina.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-          </p>
-        </div>
       </div>
+
+      {/* Metrics Summary Cards - Recebido / A Receber / Vencidos / Total Previsto */}
+      <Suspense fallback={<div className="h-[100px] bg-muted/20 rounded-xl animate-pulse" />}>
+        <MetricsSummaryCards scope="income" dateRange={dateRange} />
+      </Suspense>
+
+      {/* Analytics Panel - Evolution Chart + Ranking */}
+      <Suspense fallback={<div className="h-[300px] bg-muted/20 rounded-xl animate-pulse" />}>
+        <TransactionAnalyticsPanel scope="income" dateRange={dateRange} />
+      </Suspense>
       
       {/* Filters */}
       <Suspense fallback={<div className="h-[60px] bg-muted/20 rounded-xl animate-pulse" />}>

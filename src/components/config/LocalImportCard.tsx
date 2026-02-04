@@ -58,7 +58,7 @@ export function LocalImportCard() {
       if (!data.ok && data.message) {
         setMessage({ type: 'error', text: data.message });
       }
-    } catch (err: any) {
+    } catch (_err: unknown) {
       setMessage({ type: 'error', text: 'Erro ao buscar status' });
     } finally {
       setLoading(false);
@@ -82,7 +82,7 @@ export function LocalImportCard() {
       } else {
         setMessage({ type: 'error', text: data.message });
       }
-    } catch (err: any) {
+    } catch (_err: unknown) {
       setMessage({ type: 'error', text: 'Erro ao testar conexão' });
     } finally {
       setTesting(false);
@@ -120,7 +120,7 @@ export function LocalImportCard() {
       
       await fetchStatus();
       
-    } catch (err: any) {
+    } catch (_err: unknown) {
       setMessage({ type: 'error', text: 'Erro ao executar importação' });
     } finally {
       setImporting(false);

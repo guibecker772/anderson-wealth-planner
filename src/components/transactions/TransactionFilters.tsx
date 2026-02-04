@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { parseDateRangeFromParams, formatDateDisplay } from '@/lib/dateRange';
+import { parseDateRangeFromParams } from '@/lib/dateRange';
 import { DateRangeBadge } from '@/components/ui/DateRangePicker';
 import { transactionStatusOptions } from '@/lib/i18n/statusLabels';
 

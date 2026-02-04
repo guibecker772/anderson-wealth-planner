@@ -1,15 +1,27 @@
 'use client';
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { Badge, BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getTransactionStatusInfo, type BadgeVariant } from "@/lib/i18n/statusLabels";
-import { FileX } from "lucide-react";
+import { getTransactionStatusInfo } from "@/lib/i18n/statusLabels";
+import { FileX, Sparkles, Pencil } from "lucide-react";
+
+interface Transaction {
+  id: string;
+  dueDate: string | Date | null;
+  counterparty: string | null;
+  category: string | null;
+  plannedAmount: number | string | null;
+  actualAmount: number | string | null;
+  status: string;
+  categorySource?: 'RAW' | 'NORMALIZED' | 'MANUAL' | null;
+  normalizedAt?: string | Date | null;
+}
 
 interface TransactionTableProps {
-  data: any[];
+  data: Transaction[];
   page: number;
   totalPages: number;
   type: 'PAYABLE' | 'RECEIVABLE';
@@ -49,8 +61,18 @@ export function TransactionTable({ data, page, totalPages, type }: TransactionTa
                   <TableCell>{tx.counterparty || <span className="text-muted-foreground">—</span>}</TableCell>
                   <TableCell>
                     {tx.category ? (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-secondary text-secondary-foreground text-xs">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-secondary text-secondary-foreground text-xs">
                         {tx.category}
+                        {tx.categorySource === 'NORMALIZED' && (
+                          <span title="Categoria normalizada automaticamente">
+                            <Sparkles className="w-3 h-3 text-emerald-500" />
+                          </span>
+                        )}
+                        {tx.categorySource === 'MANUAL' && (
+                          <span title="Categoria definida manualmente">
+                            <Pencil className="w-3 h-3 text-blue-500" />
+                          </span>
+                        )}
                       </span>
                     ) : (
                       <span className="text-muted-foreground">—</span>
@@ -63,7 +85,7 @@ export function TransactionTable({ data, page, totalPages, type }: TransactionTa
                     {tx.actualAmount ? formatCurrency(Number(tx.actualAmount)) : <span className="text-muted-foreground">—</span>}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={statusInfo.variant as any}>
+                    <Badge variant={statusInfo.variant as BadgeProps['variant']}>
                       {statusInfo.label}
                     </Badge>
                   </TableCell>

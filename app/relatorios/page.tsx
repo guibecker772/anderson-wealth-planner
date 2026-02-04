@@ -1,7 +1,6 @@
 import { format } from "date-fns";
-import { Badge } from "@/lib/components/layout/ui/badge";
+import { Badge, BadgeProps } from "@/lib/components/layout/ui/badge";
 import { Button } from "@/lib/components/layout/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/lib/components/layout/ui/placeholder-ui";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/lib/components/layout/ui/table";
 import { RefreshCw, FileSpreadsheet, HardDrive, CheckCircle2, AlertOctagon, Info, Calendar, ArrowRight, FileX } from "lucide-react";
 import { parseDateRangeFromSearchParams, dateRangeToDbFilter, formatDateDisplay } from "@/lib/dateRange";
@@ -40,7 +39,7 @@ async function getSourceFiles(searchParams: { from?: string; to?: string }) {
     });
     
     return { files, isMock: false, dateRange };
-  } catch (error) {
+  } catch (_error) {
     return { files: [], isMock: false, dateRange: parseDateRangeFromSearchParams(searchParams) };
   }
 }
@@ -129,7 +128,7 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: {
         <div className="flex items-center gap-2 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
           <Info className="w-5 h-5 text-amber-600 flex-shrink-0" />
           <span className="text-amber-700 text-sm flex-1">
-            Arquivo de teste <strong>"Seed Data.xlsx"</strong> detectado. Deseja removê-lo?
+            Arquivo de teste <strong>&quot;Seed Data.xlsx&quot;</strong> detectado. Deseja removê-lo?
           </span>
           <RemoveSeedButton />
         </div>
@@ -171,7 +170,7 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: {
                     {file.processedAt ? format(new Date(file.processedAt), 'dd/MM/yyyy HH:mm') : <span className="text-muted-foreground">—</span>}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={statusInfo.variant as any}>
+                    <Badge variant={statusInfo.variant as BadgeProps['variant']}>
                       {statusInfo.label}
                     </Badge>
                   </TableCell>

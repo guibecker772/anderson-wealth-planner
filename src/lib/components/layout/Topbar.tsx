@@ -20,7 +20,10 @@ export function Topbar() {
   const pageTitle = pageTitles[pathname] || 'ClikFinance';
 
   return (
-    <header className="h-16 border-b border-border/50 bg-background/80 backdrop-blur-sm fixed top-0 right-0 left-64 z-20 flex items-center justify-between px-6">
+    <header 
+      className="h-16 border-b border-border/50 bg-background/95 backdrop-blur-sm fixed top-0 right-0 left-64 z-40 flex items-center justify-between px-6"
+      style={{ '--header-height': '64px' } as React.CSSProperties}
+    >
       {/* Page Title */}
       <div>
         <h1 className="text-lg font-semibold text-foreground">{pageTitle}</h1>

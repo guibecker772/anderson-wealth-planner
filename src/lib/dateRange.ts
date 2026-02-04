@@ -6,7 +6,7 @@
  */
 
 import { startOfMonth, endOfMonth, subDays, subMonths, startOfYear, endOfYear, format, parse, isValid } from 'date-fns';
-import { zonedTimeToUtc, utcToZonedTime } from 'date-fns-tz';
+import { utcToZonedTime } from 'date-fns-tz';
 
 // Brazil timezone
 export const BRAZIL_TZ = 'America/Sao_Paulo';
