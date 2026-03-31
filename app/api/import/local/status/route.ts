@@ -1,78 +1,62 @@
 import { NextResponse } from 'next/server';
-import { getFolderStatus, ensureFolders, listInboxFiles } from '@/lib/import/localImporter';
+import { ensureFolders, getFolderStatus, listInboxFiles, resolveImportRoot } from '@/lib/import/localImporter';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
-/**
- * GET /api/import/local/status
- * Retorna status da pasta de importação local
- */
 export async function GET() {
   try {
-    const basePath = process.env.LOCAL_IMPORT_FOLDER;
-    
-    if (!basePath) {
-      return NextResponse.json({
-        ok: false,
-        message: 'LOCAL_IMPORT_FOLDER não configurado',
-        status: null
-      });
-    }
-    
-    const status = await getFolderStatus(basePath);
-    
+    const status = await getFolderStatus();
+
     return NextResponse.json({
       ok: true,
-      message: status.exists 
-        ? `Pasta configurada com ${status.inboxCount} arquivos pendentes`
-        : 'Pasta não encontrada',
-      status
+      message: status.configured
+        ? status.exists
+          ? `Raiz pronta com ${status.inboxCount} arquivo(s) pendente(s) em inbox/`
+          : 'Raiz configurada, mas a pasta ainda não foi encontrada'
+        : 'Raiz automática ainda não configurada. Upload manual continua disponível.',
+      status,
     });
-    
   } catch (error: unknown) {
     const errMsg = error instanceof Error ? error.message : 'Erro ao verificar status';
-    console.error('Erro ao verificar status:', error);
+    console.error('Erro ao verificar status da importação:', error);
     return NextResponse.json({
       ok: false,
       message: errMsg,
-      status: null
+      status: null,
     });
   }
 }
 
-/**
- * POST /api/import/local/status
- * Testa conexão e cria subpastas se necessário
- */
 export async function POST() {
   try {
-    const basePath = process.env.LOCAL_IMPORT_FOLDER;
-    
-    if (!basePath) {
+    const config = resolveImportRoot();
+
+    if (!config.basePath) {
       return NextResponse.json({
         ok: false,
-        message: 'LOCAL_IMPORT_FOLDER não configurado'
+        message: 'IMPORT_ROOT_FOLDER/LOCAL_IMPORT_FOLDER não configurado. Use o upload manual enquanto isso.',
+        status: await getFolderStatus(),
       });
     }
-    
-    // Criar subpastas
-    await ensureFolders(basePath);
-    
-    // Listar arquivos
-    const files = await listInboxFiles(basePath);
-    
+
+    await ensureFolders(config.basePath);
+    const files = await listInboxFiles(config.basePath);
+    const status = await getFolderStatus(config.basePath);
+
     return NextResponse.json({
       ok: true,
-      message: `Conexão OK. Subpastas criadas/verificadas. ${files.length} arquivo(s) xlsx em inbox/`,
-      filesInInbox: files.length
+      message: `Estrutura validada. ${files.length} arquivo(s) encontrado(s) em inbox/.`,
+      filesInInbox: files.length,
+      status,
     });
-    
   } catch (error: unknown) {
     const errMsg = error instanceof Error ? error.message : 'Erro desconhecido';
-    console.error('Erro ao testar conexão:', error);
+    console.error('Erro ao validar raiz de importação:', error);
     return NextResponse.json({
       ok: false,
-      message: `Erro: ${errMsg}`
+      message: `Erro: ${errMsg}`,
+      status: null,
     });
   }
 }

@@ -49,6 +49,8 @@ export async function GET(req: NextRequest) {
         incomeReceived: { prev: 0, deltaValue: 0, deltaPct: null },
         expensePaid: { prev: 0, deltaValue: 0, deltaPct: null },
         profitCash: { prev: 0, deltaValue: 0, deltaPct: null },
+        receivable: { prev: 0, deltaValue: 0, deltaPct: null },
+        payable: { prev: 0, deltaValue: 0, deltaPct: null },
         margin: { prev: null, deltaPP: null },
       },
       series: [],
@@ -62,6 +64,35 @@ export async function GET(req: NextRequest) {
 
   try {
     const { db } = await import('@/lib/db');
+    const totalTransactions = await db.transaction.count();
+
+    if (totalTransactions === 0) {
+      return NextResponse.json({
+        summary: {
+          incomeReceived: 0,
+          expensePaid: 0,
+          profitCash: 0,
+          margin: null,
+          receivable: 0,
+          payable: 0,
+          receivableOverdue: 0,
+          payableOverdue: 0,
+        },
+        comparison: {
+          incomeReceived: { prev: 0, deltaValue: 0, deltaPct: null },
+          expensePaid: { prev: 0, deltaValue: 0, deltaPct: null },
+          profitCash: { prev: 0, deltaValue: 0, deltaPct: null },
+          receivable: { prev: 0, deltaValue: 0, deltaPct: null },
+          payable: { prev: 0, deltaValue: 0, deltaPct: null },
+          margin: { prev: null, deltaPP: null },
+        },
+        series: [],
+        drivers: [],
+        dateRange,
+        previousRange: dateRange,
+        bucket,
+      });
+    }
     
     if (process.env.NODE_ENV === 'development') {
       console.log('[api/dashboard/exec] Request:', { dateRange, bucket });
@@ -96,6 +127,8 @@ export async function GET(req: NextRequest) {
         incomeReceived: { prev: 0, deltaValue: 0, deltaPct: null },
         expensePaid: { prev: 0, deltaValue: 0, deltaPct: null },
         profitCash: { prev: 0, deltaValue: 0, deltaPct: null },
+        receivable: { prev: 0, deltaValue: 0, deltaPct: null },
+        payable: { prev: 0, deltaValue: 0, deltaPct: null },
         margin: { prev: null, deltaPP: null },
       },
       series: [],

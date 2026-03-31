@@ -1,91 +1,26 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { 
-  Users, 
-  Loader2, 
-  AlertTriangle, 
+import { useRouter } from 'next/navigation';
+import {
+  Users,
+  AlertTriangle,
   ChevronRight,
   Car,
   TrendingUp,
   Wrench,
   AlertCircle,
 } from 'lucide-react';
-import { parseDateRangeFromParams } from '@/lib/dateRange';
 import { DateRangeBadge } from '@/components/ui/DateRangePicker';
+import type { InvestorListResponse } from '@/lib/analytics/investor-metrics';
 
-// ============================================================================
-// TYPES
-// ============================================================================
-
-interface Investor {
-  id: string;
-  name: string;
-  vehicles: string[];
+interface InvestidoresContentProps {
+  data: InvestorListResponse;
+  dateRange: { from: string; to: string };
+  error?: string | null;
 }
 
-interface InvestorListData {
-  investors: Investor[];
-  total: number;
-}
-
-// ============================================================================
-// HELPERS
-// ============================================================================
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function formatCurrencyFull(value: number): string {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(value);
-}
-
-// ============================================================================
-// COMPONENT
-// ============================================================================
-
-export function InvestidoresContent() {
+export function InvestidoresContent({ data, dateRange, error }: InvestidoresContentProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const dateRange = parseDateRangeFromParams(searchParams);
-  
-  const [data, setData] = useState<InvestorListData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function fetchData() {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const res = await fetch('/api/investors');
-        
-        if (!res.ok) {
-          throw new Error('Falha ao carregar investidores');
-        }
-
-        const json = await res.json();
-        setData(json);
-      } catch (err) {
-        setError((err as Error).message);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchData();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-[400px]">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
 
   if (error) {
     return (
@@ -106,34 +41,31 @@ export function InvestidoresContent() {
 
   return (
     <div className="space-y-6">
-      {/* Info Banner */}
       <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
         <div className="flex items-start gap-3">
           <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5" />
           <div>
-            <p className="text-sm font-medium text-amber-800">Configuração Pendente</p>
+            <p className="text-sm font-medium text-amber-800">ConfiguraÃ§Ã£o Pendente</p>
             <p className="text-xs text-amber-700 mt-1">
-              O mapeamento investidor ↔ veículos está usando dados de exemplo. 
-              Para configurar os dados reais, edite o arquivo <code className="bg-amber-200/50 px-1 rounded">src/lib/analytics/investor-metrics.ts</code> 
-              ou crie um arquivo de configuração <code className="bg-amber-200/50 px-1 rounded">data/investors.json</code>.
+              O mapeamento investidor â†” veÃ­culos estÃ¡ usando dados de exemplo.
+              Para configurar os dados reais, edite o arquivo <code className="bg-amber-200/50 px-1 rounded">src/lib/analytics/investor-metrics.ts</code>
+              ou crie um arquivo de configuraÃ§Ã£o <code className="bg-amber-200/50 px-1 rounded">data/investors.json</code>.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Filters */}
       <div className="flex items-center justify-between p-4 bg-card rounded-xl border shadow-sm">
         <div className="flex items-center gap-2">
           <Users className="w-5 h-5 text-muted-foreground" />
-          <span className="font-medium">{data?.total || 0} investidores cadastrados</span>
+          <span className="font-medium">{data.total} investidores cadastrados</span>
         </div>
         <DateRangeBadge from={dateRange.from} to={dateRange.to} />
       </div>
 
-      {/* Investors Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {data?.investors.map((investor) => (
-          <div 
+        {data.investors.map((investor) => (
+          <div
             key={investor.id}
             onClick={() => handleInvestorClick(investor.id)}
             className="rounded-xl border bg-card shadow-sm p-5 hover:shadow-md hover:border-[#A8CF4C]/50 transition-all cursor-pointer group"
@@ -145,11 +77,11 @@ export function InvestidoresContent() {
                 </h3>
                 <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
                   <Car className="w-4 h-4" />
-                  <span>{investor.vehicles.length} veículo(s)</span>
+                  <span>{investor.vehicles.length} veÃ­culo(s)</span>
                 </div>
                 <div className="flex flex-wrap gap-1 mt-3">
                   {investor.vehicles.slice(0, 3).map((plate) => (
-                    <span 
+                    <span
                       key={plate}
                       className="px-2 py-0.5 bg-muted text-xs font-mono rounded"
                     >
@@ -168,38 +100,37 @@ export function InvestidoresContent() {
           </div>
         ))}
 
-        {(!data?.investors || data.investors.length === 0) && (
+        {data.investors.length === 0 && (
           <div className="col-span-full flex flex-col items-center justify-center h-[200px] bg-muted/20 rounded-xl">
             <Users className="w-12 h-12 text-muted-foreground mb-3" />
             <p className="text-muted-foreground">Nenhum investidor cadastrado</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Configure o mapeamento de investidores para começar
+              Configure o mapeamento de investidores para comeÃ§ar
             </p>
           </div>
         )}
       </div>
 
-      {/* Legend */}
       <div className="bg-card rounded-xl border p-4 shadow-sm">
-        <h4 className="font-medium text-sm mb-3">Métricas disponíveis por investidor</h4>
+        <h4 className="font-medium text-sm mb-3">MÃ©tricas disponÃ­veis por investidor</h4>
         <div className="grid gap-3 md:grid-cols-3">
           <div className="flex items-center gap-2 text-sm">
             <div className="p-1.5 rounded-md bg-emerald-500/10">
               <TrendingUp className="w-4 h-4 text-emerald-600" />
             </div>
-            <span className="text-muted-foreground">Retorno via Locação</span>
+            <span className="text-muted-foreground">Retorno via LocaÃ§Ã£o</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <div className="p-1.5 rounded-md bg-blue-500/10">
               <Wrench className="w-4 h-4 text-blue-600" />
             </div>
-            <span className="text-muted-foreground">Custos de Manutenção</span>
+            <span className="text-muted-foreground">Custos de ManutenÃ§Ã£o</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <div className="p-1.5 rounded-md bg-amber-500/10">
               <AlertTriangle className="w-4 h-4 text-amber-600" />
             </div>
-            <span className="text-muted-foreground">Multas e Infrações</span>
+            <span className="text-muted-foreground">Multas e InfraÃ§Ãµes</span>
           </div>
         </div>
       </div>

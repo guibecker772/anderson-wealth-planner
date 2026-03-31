@@ -67,6 +67,7 @@ interface FineDetailItem {
   amount: number;
   status: string;
   paidBy: string;
+  paidByLabel: string;
   description: string | null;
   counterparty: string | null;
   category: string | null;
@@ -117,10 +118,11 @@ function formatPct(value: number | null): string {
   return `${sign}${value.toFixed(1)}%`;
 }
 
-function getPaidByLabel(paidBy: string): string {
+function getPaidByLabel(paidBy: string, paidByLabel?: string): string {
+  if (paidByLabel) return paidByLabel;
   switch (paidBy) {
     case 'COMPANY': return 'Empresa';
-    case 'LESSOR': return 'Locador';
+    case 'LESSOR': return 'Proprietário';
     case 'UNKNOWN': return 'Indefinido';
     default: return paidBy;
   }
@@ -225,7 +227,7 @@ export function MultasContent() {
             <SelectContent>
               <SelectItem value="ALL">Todos</SelectItem>
               <SelectItem value="COMPANY">Empresa</SelectItem>
-              <SelectItem value="LESSOR">Locador</SelectItem>
+              <SelectItem value="LESSOR">Proprietário</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -445,7 +447,7 @@ export function MultasContent() {
                       variant={fine.paidBy === 'LESSOR' ? 'default' : 'secondary'} 
                       size="sm"
                     >
-                      {getPaidByLabel(fine.paidBy)}
+                      {getPaidByLabel(fine.paidBy, fine.paidByLabel)}
                     </Badge>
                   </td>
                   <td className="px-4 py-3 max-w-[200px] truncate text-muted-foreground">

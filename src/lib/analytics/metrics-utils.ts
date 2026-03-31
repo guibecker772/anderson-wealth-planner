@@ -395,6 +395,58 @@ export function matchesPaidByFilter(paidBy: PaidBy, filter: 'ALL' | 'COMPANY' | 
   }
 }
 
+export function resolveTransactionPlate(data: {
+  description?: string | null;
+  rawJson?: Record<string, unknown> | null;
+}): string | null {
+  const importMeta = (data.rawJson?.__import as Record<string, unknown> | undefined) || undefined;
+  const candidates = [
+    importMeta?.plate,
+    data.rawJson?.plate,
+    data.rawJson?.placa,
+    data.rawJson?.Placa,
+    data.rawJson?.veiculo,
+    data.rawJson?.Veículo,
+    data.rawJson?.Veiculo,
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate === 'string' && candidate.trim()) {
+      return extractPlate(candidate) || candidate.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    }
+  }
+
+  return extractPlate(data.description);
+}
+
+export function resolveFinePaidBy(data: {
+  description?: string | null;
+  rawJson?: Record<string, unknown> | null;
+}): PaidBy {
+  const importMeta = (data.rawJson?.__import as Record<string, unknown> | undefined) || undefined;
+  const normalized = typeof importMeta?.paidByNormalized === 'string' ? importMeta.paidByNormalized : null;
+
+  if (normalized === 'COMPANY') return 'COMPANY';
+  if (normalized === 'OWNER') return 'LESSOR';
+  if (normalized === 'DRIVER') return 'UNKNOWN';
+
+  return derivePaidBy(data.description);
+}
+
+export function resolveFinePaidByLabel(data: {
+  description?: string | null;
+  rawJson?: Record<string, unknown> | null;
+}): string {
+  const importMeta = (data.rawJson?.__import as Record<string, unknown> | undefined) || undefined;
+  const label = typeof importMeta?.paidByDisplay === 'string' ? importMeta.paidByDisplay : null;
+  if (label) return label;
+
+  const paidBy = derivePaidBy(data.description);
+  if (paidBy === 'COMPANY') return 'Clickcar';
+  if (paidBy === 'LESSOR') return 'Proprietário';
+  return 'Indefinido';
+}
+
 // ============================================================================
 // CATEGORY/CLASS NORMALIZATION
 // ============================================================================

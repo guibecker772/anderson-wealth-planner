@@ -30,6 +30,31 @@ export async function GET(req: NextRequest) {
 
   try {
     const { db } = await import('@/lib/db');
+    const totalTransactions = await db.transaction.count();
+
+    if (totalTransactions === 0) {
+      return NextResponse.json({
+        summary: {
+          totalRevenue: 0,
+          totalExpenses: 0,
+          netProfit: 0,
+          pendingPayables: 0,
+          overduePayables: 0,
+        },
+        cashflow: [],
+        topCategories: [],
+        dateRange,
+        emptyState: {
+          isEmpty: true,
+          title: 'Nenhum dado importado ainda',
+          description:
+            'Importe seus arquivos em Configuracoes para preencher os indicadores, graficos e rankings deste painel.',
+          actionLabel: 'Ir para Configuracoes',
+          actionHref: '/configuracoes',
+        },
+      });
+    }
+
     const data = await getDashboardData(db, dateRange);
     
     return NextResponse.json(data);

@@ -28,6 +28,17 @@ enum SourceType {
   LOCAL
 }
 
+enum ImportMode {
+  AUTO_FOLDER
+  MANUAL_UPLOAD
+}
+
+enum SourceFileKind {
+  OPERATIONAL
+  FINES
+  UNKNOWN
+}
+
 enum MatchType {
   EXACT
   CONTAINS
@@ -57,10 +68,22 @@ model SourceFile {
   status         ProcessingStatus @default(PENDING)
   errorMessage   String?
   source         SourceType       @default(LOCAL)
+  importMode     ImportMode       @default(AUTO_FOLDER)
+  kind           SourceFileKind   @default(UNKNOWN)
+  originalPath   String?
+  totalRows      Int              @default(0)
+  importedRows   Int              @default(0)
+  skippedRows    Int              @default(0)
+  errorCount     Int              @default(0)
+  details        Json?
   transactions   Transaction[]
 
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
+
+  @@index([importMode])
+  @@index([kind])
+  @@index([processedAt])
 }
 
 model Transaction {

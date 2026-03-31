@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as fs from 'fs';
 import * as path from 'path';
+import { resolveImportRoot } from '@/lib/import/localImporter';
 
 /**
  * DELETE /api/admin/remove-seed
@@ -63,25 +64,21 @@ export async function DELETE(_req: NextRequest) {
       };
     });
 
-    // Try to archive the physical file if it exists in LOCAL_IMPORT_FOLDER
-    const localFolder = process.env.LOCAL_IMPORT_FOLDER;
-    if (localFolder) {
+    const importRoot = resolveImportRoot().basePath;
+    if (importRoot) {
       try {
-        const processedPath = path.join(localFolder, 'processed', 'Seed Data.xlsx');
-        const archivedFolder = path.join(localFolder, 'archived');
+        const processedPath = path.join(importRoot, 'processed', 'Seed Data.xlsx');
+        const archivedFolder = path.join(importRoot, 'archive', 'admin');
         
         if (fs.existsSync(processedPath)) {
-          // Create archived folder if it doesn't exist
           if (!fs.existsSync(archivedFolder)) {
             fs.mkdirSync(archivedFolder, { recursive: true });
           }
           
-          // Move file to archived
           const archivedPath = path.join(archivedFolder, `Seed Data.xlsx.${Date.now()}.archived`);
           fs.renameSync(processedPath, archivedPath);
         }
       } catch (fsError) {
-        // Log but don't fail - the DB cleanup is the important part
         console.warn('Could not archive physical seed file:', fsError);
       }
     }

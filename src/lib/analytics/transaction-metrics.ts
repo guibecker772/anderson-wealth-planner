@@ -15,16 +15,18 @@ import { dateRangeToDbFilter, type DateRangeStrings } from '@/lib/dateRange';
 import {
   resolveAmount,
   chooseBucketGranularity,
+  resolveCanonicalDate,
   getBucketKey,
   formatBucketLabel,
   calculatePreviousPeriod,
   calculateDelta,
   normalizeClassKey,
   formatClassLabel,
-  extractPlate,
   extractAIT,
-  derivePaidBy,
   matchesPaidByFilter,
+  resolveFinePaidBy,
+  resolveFinePaidByLabel,
+  resolveTransactionPlate,
   type BucketGranularity,
   type MetricsSummary,
   type TimeSeriesPoint,
@@ -74,6 +76,12 @@ export interface VehicleRankingResponse {
   dateRange: DateRangeStrings;
 }
 
+export interface TransactionAnalyticsBundle {
+  summary: SummaryResponse;
+  series: TimeSeriesResponse;
+  top: TopRankingResponse;
+}
+
 export interface FineDetailItem {
   id: string;
   date: string;
@@ -82,6 +90,7 @@ export interface FineDetailItem {
   amount: number;
   status: string;
   paidBy: PaidBy;
+  paidByLabel: string;
   description: string | null;
   counterparty: string | null;
   category: string | null;
@@ -93,6 +102,200 @@ export interface FineListResponse {
   page: number;
   pageSize: number;
   dateRange: DateRangeStrings;
+}
+
+interface AnalyticsRow {
+  dueDate: Date | null;
+  plannedDate: Date | null;
+  actualDate: Date | null;
+  status: string;
+  plannedAmount: number | string | { toString(): string } | null;
+  actualAmount: number | string | { toString(): string } | null;
+  grossAmount: number | string | { toString(): string } | null;
+  category?: string | null;
+}
+
+function buildTransactionWhere(
+  scope: 'income' | 'expense' | 'fines',
+  dateRange: DateRangeStrings
+) {
+  const dateFilter = dateRangeToDbFilter(dateRange);
+  const where: {
+    dueDate: { gte: Date; lte: Date };
+    type?: 'PAYABLE' | 'RECEIVABLE';
+    OR?: Array<{ category: { contains: string; mode: 'insensitive' } }>;
+  } = {
+    dueDate: {
+      gte: dateFilter.gte,
+      lte: dateFilter.lte,
+    },
+  };
+
+  if (scope === 'income') {
+    where.type = 'RECEIVABLE';
+  } else if (scope === 'expense') {
+    where.type = 'PAYABLE';
+  } else {
+    where.type = 'PAYABLE';
+    where.OR = [
+      { category: { contains: 'Multa', mode: 'insensitive' } },
+      { category: { contains: 'Detran', mode: 'insensitive' } },
+      { category: { contains: 'Correios', mode: 'insensitive' } },
+    ];
+  }
+
+  return where;
+}
+
+function toAnalyticsAmount(row: AnalyticsRow) {
+  return resolveAmount({
+    status: row.status,
+    actualAmount: row.actualAmount != null ? Number(row.actualAmount) : null,
+    plannedAmount: row.plannedAmount != null ? Number(row.plannedAmount) : null,
+    grossAmount: row.grossAmount != null ? Number(row.grossAmount) : null,
+  });
+}
+
+function buildSummaryResponse(
+  currentRows: AnalyticsRow[],
+  previousRows: AnalyticsRow[],
+  currentRange: DateRangeStrings,
+  previousRange: DateRangeStrings
+): SummaryResponse {
+  const currentMetrics = currentRows.reduce(
+    (acc, row) => {
+      acc.total += toAnalyticsAmount(row);
+      acc.count += 1;
+      return acc;
+    },
+    { total: 0, count: 0 }
+  );
+
+  const previousMetrics = previousRows.reduce(
+    (acc, row) => {
+      acc.total += toAnalyticsAmount(row);
+      acc.count += 1;
+      return acc;
+    },
+    { total: 0, count: 0 }
+  );
+
+  const delta = calculateDelta(currentMetrics.total, previousMetrics.total);
+
+  return {
+    total: currentMetrics.total,
+    count: currentMetrics.count,
+    prevTotal: previousMetrics.total,
+    prevCount: previousMetrics.count,
+    deltaValue: delta.value,
+    deltaPct: delta.pct,
+    dateRange: currentRange,
+    previousRange,
+  };
+}
+
+function buildTimeSeriesResponse(
+  rows: AnalyticsRow[],
+  dateRange: DateRangeStrings
+): TimeSeriesResponse {
+  const granularity = chooseBucketGranularity(parseISO(dateRange.from), parseISO(dateRange.to));
+  const bucketMap = new Map<string, { total: number; count: number }>();
+
+  for (const row of rows) {
+    const date = resolveCanonicalDate(row);
+    if (!date) continue;
+
+    const bucketKey = getBucketKey(date, granularity);
+    const amount = toAnalyticsAmount(row);
+
+    if (!bucketMap.has(bucketKey)) {
+      bucketMap.set(bucketKey, { total: 0, count: 0 });
+    }
+
+    const bucket = bucketMap.get(bucketKey)!;
+    bucket.total += amount;
+    bucket.count += 1;
+  }
+
+  const data: TimeSeriesPoint[] = Array.from(bucketMap.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, values]) => ({
+      date,
+      label: formatBucketLabel(date, granularity),
+      total: values.total,
+      count: values.count,
+    }));
+
+  return {
+    data,
+    granularity,
+    dateRange,
+  };
+}
+
+function buildTopRankingResponse(
+  rows: AnalyticsRow[],
+  dateRange: DateRangeStrings,
+  limit: number
+): TopRankingResponse {
+  const categoryMap = new Map<string, { key: string; label: string; total: number; count: number }>();
+
+  for (const row of rows) {
+    const key = normalizeClassKey(row.category);
+    const label = formatClassLabel(row.category);
+    const amount = toAnalyticsAmount(row);
+
+    if (!categoryMap.has(key)) {
+      categoryMap.set(key, { key, label, total: 0, count: 0 });
+    }
+
+    const entry = categoryMap.get(key)!;
+    entry.total += amount;
+    entry.count += 1;
+  }
+
+  return {
+    data: Array.from(categoryMap.values())
+      .sort((a, b) => b.total - a.total)
+      .slice(0, limit),
+    limit,
+    dateRange,
+  };
+}
+
+export async function getTransactionAnalyticsBundle(
+  db: PrismaClient,
+  params: Omit<TransactionMetricsParams, 'paidByFilter'> & { limit?: number }
+): Promise<TransactionAnalyticsBundle> {
+  const comparison = calculatePreviousPeriod(params.from, params.to);
+  const limit = params.limit || 5;
+  const select = {
+    dueDate: true,
+    plannedDate: true,
+    actualDate: true,
+    status: true,
+    plannedAmount: true,
+    actualAmount: true,
+    grossAmount: true,
+    category: true,
+  };
+
+  const [currentRows, previousRows] = await Promise.all([
+    db.transaction.findMany({
+      where: buildTransactionWhere(params.scope, comparison.current),
+      select,
+    }),
+    db.transaction.findMany({
+      where: buildTransactionWhere(params.scope, comparison.previous),
+      select,
+    }),
+  ]);
+
+  return {
+    summary: buildSummaryResponse(currentRows, previousRows, comparison.current, comparison.previous),
+    series: buildTimeSeriesResponse(currentRows, comparison.current),
+    top: buildTopRankingResponse(currentRows, comparison.current, limit),
+  };
 }
 
 // ============================================================================
@@ -157,7 +360,7 @@ export async function getTransactionTimeSeries(
     if (params.scope === 'fines' && params.paidByFilter) {
       const rawJson = tx.rawJson as Record<string, unknown> | null;
       const description = tx.description || (rawJson?.['Histórico'] as string) || (rawJson?.['Descrição'] as string) || '';
-      const paidBy = derivePaidBy(description);
+      const paidBy = resolveFinePaidBy({ description, rawJson });
       if (!matchesPaidByFilter(paidBy, params.paidByFilter)) {
         continue;
       }
@@ -364,7 +567,7 @@ async function aggregateForPeriod(
     if (params.scope === 'fines' && params.paidByFilter) {
       const rawJson = tx.rawJson as Record<string, unknown> | null;
       const description = tx.description || (rawJson?.['Histórico'] as string) || (rawJson?.['Descrição'] as string) || '';
-      const paidBy = derivePaidBy(description);
+      const paidBy = resolveFinePaidBy({ description, rawJson });
       if (!matchesPaidByFilter(paidBy, params.paidByFilter)) {
         continue;
       }
@@ -435,14 +638,14 @@ export async function getVehicleRanking(
     const rawJson = tx.rawJson as Record<string, unknown> | null;
     const description = tx.description || (rawJson?.['Histórico'] as string) || (rawJson?.['Descrição'] as string) || '';
     if (params.paidByFilter) {
-      const paidBy = derivePaidBy(description);
+      const paidBy = resolveFinePaidBy({ description, rawJson });
       if (!matchesPaidByFilter(paidBy, params.paidByFilter)) {
         continue;
       }
     }
     
     // Extract plate
-    const plate = extractPlate(description) || 'SEM PLACA';
+    const plate = resolveTransactionPlate({ description, rawJson }) || 'SEM PLACA';
     const ait = extractAIT(description);
     
     const amount = resolveAmount({
@@ -545,7 +748,8 @@ export async function getFinesList(
   for (const tx of transactions) {
     const rawJson = tx.rawJson as Record<string, unknown> | null;
     const description = tx.description || (rawJson?.['Histórico'] as string) || (rawJson?.['Descrição'] as string) || '';
-    const paidBy = derivePaidBy(description);
+    const paidBy = resolveFinePaidBy({ description, rawJson });
+    const paidByLabel = resolveFinePaidByLabel({ description, rawJson });
     
     // Apply paidBy filter
     if (params.paidByFilter && !matchesPaidByFilter(paidBy, params.paidByFilter)) {
@@ -562,11 +766,12 @@ export async function getFinesList(
     data.push({
       id: tx.id,
       date: tx.dueDate ? format(tx.dueDate, 'yyyy-MM-dd') : '',
-      plate: extractPlate(description),
+      plate: resolveTransactionPlate({ description, rawJson }),
       aitCode: extractAIT(description),
       amount,
       status: tx.status,
       paidBy,
+      paidByLabel,
       description: tx.description,
       counterparty: tx.counterparty,
       category: tx.category,

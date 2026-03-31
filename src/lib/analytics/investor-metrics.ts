@@ -13,10 +13,10 @@ import { PrismaClient } from '@prisma/client';
 import { dateRangeToDbFilter, type DateRangeStrings } from '@/lib/dateRange';
 import {
   resolveAmount,
-  extractPlate,
   isMaintenanceCategory,
   isFinesCategory,
   normalizeClassKey,
+  resolveTransactionPlate,
 } from './metrics-utils';
 
 // ============================================================================
@@ -198,7 +198,7 @@ export async function getInvestorMetrics(
   for (const tx of transactions) {
     const rawJson = tx.rawJson as Record<string, unknown> | null;
     const description = tx.description || (rawJson?.['Histórico'] as string) || (rawJson?.['Descrição'] as string) || '';
-    const extractedPlate = extractPlate(description);
+    const extractedPlate = resolveTransactionPlate({ description, rawJson });
     
     // Check if this transaction belongs to one of the investor's vehicles
     let matchedPlate: string | null = null;

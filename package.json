@@ -15,14 +15,17 @@
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset --force",
     "seed": "tsx src/scripts/seed.ts",
-    "ingest:local": "tsx src/scripts/ingestLocal.ts",
     "admin:remove-seed": "tsx src/scripts/removeSeed.ts",
-    "clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true}); require('fs').rmSync('node_modules/.prisma',{recursive:true,force:true});\""
+    "import:reset-validation:dry": "tsx src/scripts/resetImportValidation.ts",
+    "import:reset-validation": "tsx src/scripts/resetImportValidation.ts --execute",
+    "clean": "node -e \"['.next','node_modules/.cache'].forEach((path)=>require('fs').rmSync(path,{recursive:true,force:true}))\"",
+    "clean:full": "node -e \"['.next','node_modules/.cache','node_modules/.prisma'].forEach((path)=>require('fs').rmSync(path,{recursive:true,force:true}))\"",
+    "dev:clean": "npm run clean && npm run db:generate && npm run dev",
+    "build:clean": "npm run clean && npm run build",
+    "repair:local": "npm run clean:full && npm run db:generate"
   },
   "dependencies": {
     "@prisma/client": "^5.10.0",
-    "@radix-ui/react-label": "^2.0.2",
-    "@radix-ui/react-popover": "^1.0.7",
     "@radix-ui/react-select": "^2.0.0",
     "@radix-ui/react-slot": "^1.0.2",
     "class-variance-authority": "^0.7.0",
@@ -30,7 +33,6 @@
     "date-fns": "^2.30.0",
     "date-fns-tz": "^2.0.1",
     "exceljs": "^4.4.0",
-    "googleapis": "^133.0.0",
     "lucide-react": "^0.344.0",
     "next": "14.2.35",
     "react": "^18",
@@ -55,7 +57,6 @@
     "postcss": "^8",
     "prisma": "^5.10.0",
     "tailwindcss": "^3.3.0",
-    "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
     "typescript": "^5"
   }

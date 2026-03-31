@@ -53,6 +53,8 @@ export interface ExecComparison {
   incomeReceived: { prev: number; deltaValue: number; deltaPct: number | null };
   expensePaid: { prev: number; deltaValue: number; deltaPct: number | null };
   profitCash: { prev: number; deltaValue: number; deltaPct: number | null };
+  receivable: { prev: number; deltaValue: number; deltaPct: number | null };
+  payable: { prev: number; deltaValue: number; deltaPct: number | null };
   margin: { prev: number | null; deltaPP: number | null }; // delta in percentage points
 }
 
@@ -81,6 +83,7 @@ export interface ExecDashboardResponse {
   dateRange: DateRangeStrings;
   previousRange: DateRangeStrings;
   bucket: BucketGranularity;
+  error?: string;
 }
 
 // ============================================================================
@@ -517,6 +520,16 @@ export async function getExecDashboardData(
       prev: prevSummary.profitCash,
       deltaValue: currentSummary.profitCash - prevSummary.profitCash,
       deltaPct: calculateDeltaPct(currentSummary.profitCash, prevSummary.profitCash),
+    },
+    receivable: {
+      prev: prevSummary.receivable,
+      deltaValue: currentSummary.receivable - prevSummary.receivable,
+      deltaPct: calculateDeltaPct(currentSummary.receivable, prevSummary.receivable),
+    },
+    payable: {
+      prev: prevSummary.payable,
+      deltaValue: currentSummary.payable - prevSummary.payable,
+      deltaPct: calculateDeltaPct(currentSummary.payable, prevSummary.payable),
     },
     margin: {
       prev: prevSummary.margin,
