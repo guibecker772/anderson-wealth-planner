@@ -110,6 +110,23 @@ export interface DashboardChartsData {
     from: string;
     to: string;
   };
+  financialSummary?: {
+    revenue: number;
+    expense: number;
+    investments: number;
+    netCashAfterInvestments: number;
+    entryCount: number;
+  };
+  operationalSummary?: {
+    revenueReceived: number;
+    amountToCharge: number;
+    operationalCost: number;
+    netOperational: number;
+    pendingReceivables: number;
+    fleetStates: Array<{ status: string; count: number }>;
+    qualitySummary: Record<'OK' | 'WARNING' | 'REVIEW_REQUIRED' | 'UNKNOWN', number>;
+    snapshotCount: number;
+  };
   error?: string;
   emptyState?: DashboardEmptyState;
 }
@@ -178,7 +195,7 @@ export function DashboardCharts({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(data.error ?? initialExecData.error ?? null);
 
-  const { summary, cashflow, topCategories, emptyState } = data;
+  const { summary, cashflow, topCategories, emptyState, financialSummary, operationalSummary } = data;
   const isEmptyState = Boolean(emptyState?.isEmpty);
   const showComparisons = !isEmptyState;
   const marginValue =
@@ -281,7 +298,7 @@ export function DashboardCharts({
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-foreground">Painel Executivo</h2>
-          <p className="mt-0.5 text-sm text-muted-foreground">Visao caixa: Receita Recebida x Despesa Paga</p>
+          <p className="mt-0.5 text-sm text-muted-foreground">Visao financeira e operacional sem dupla contagem</p>
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1 rounded-lg border bg-muted/50 p-1">
@@ -309,9 +326,9 @@ export function DashboardCharts({
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <KPICard
-          title="Lucro (Caixa)"
+          title="Resultado Financeiro"
           value={formatCurrencyFull(execData.summary.profitCash ?? summary.netProfit)}
-          tooltip="Receita Recebida x Despesa Paga no periodo"
+          tooltip="Entradas financeiras menos despesas financeiras do periodo"
           deltaPct={showComparisons ? execData.comparison.profitCash.deltaPct : undefined}
           deltaValue={showComparisons ? execData.comparison.profitCash.deltaValue : undefined}
           icon={<Wallet className="h-5 w-5" />}
@@ -332,9 +349,9 @@ export function DashboardCharts({
           deltaPositiveIsGood
         />
         <KPICard
-          title="Receita Recebida"
+          title="Receita Financeira"
           value={formatCurrencyFull(summary.totalRevenue)}
-          tooltip="Valor efetivamente recebido no periodo"
+          tooltip="Entradas do ledger financeiro (aba Receita)"
           deltaPct={showComparisons ? execData.comparison.incomeReceived.deltaPct : undefined}
           icon={<TrendingUp className="h-5 w-5" />}
           iconBg="bg-emerald-500/10"
@@ -343,9 +360,9 @@ export function DashboardCharts({
           deltaPositiveIsGood
         />
         <KPICard
-          title="Despesa Paga"
+          title="Despesa Financeira"
           value={formatCurrencyFull(summary.totalExpenses)}
-          tooltip="Valor efetivamente pago no periodo"
+          tooltip="Saidas financeiras da aba Despesa"
           deltaPct={showComparisons ? execData.comparison.expensePaid.deltaPct : undefined}
           icon={<TrendingDown className="h-5 w-5" />}
           iconBg="bg-red-500/10"
@@ -377,6 +394,43 @@ export function DashboardCharts({
           iconColor={summary.overduePayables > 0 ? 'text-amber-600' : 'text-[#022D44]'}
         />
       </div>
+
+      {financialSummary || operationalSummary ? (
+        <div className="grid gap-6 lg:grid-cols-2">
+          {financialSummary ? (
+            <div className="rounded-xl border bg-card p-6 shadow-sm">
+              <div className="mb-4">
+                <h3 className="font-semibold text-foreground">Camada Financeira</h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Caixa canônico do workbook: Receita, Despesa e Investimentos
+                </p>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <KPICard title="Entradas" value={formatCurrencyFull(financialSummary.revenue)} icon={<TrendingUp className="h-5 w-5" />} iconBg="bg-emerald-500/10" iconColor="text-emerald-600" valueColor="text-emerald-600" />
+                <KPICard title="Saidas" value={formatCurrencyFull(financialSummary.expense)} icon={<TrendingDown className="h-5 w-5" />} iconBg="bg-red-500/10" iconColor="text-red-600" valueColor="text-red-600" />
+                <KPICard title="Investimentos" value={formatCurrencyFull(financialSummary.investments)} icon={<Receipt className="h-5 w-5" />} iconBg="bg-[#022D44]/10" iconColor="text-[#022D44]" />
+                <KPICard title="Saldo apos investimentos" value={formatCurrencyFull(financialSummary.netCashAfterInvestments)} icon={<Wallet className="h-5 w-5" />} iconBg="bg-blue-500/10" iconColor="text-blue-600" valueColor={financialSummary.netCashAfterInvestments >= 0 ? 'text-blue-600' : 'text-red-600'} />
+              </div>
+            </div>
+          ) : null}
+          {operationalSummary ? (
+            <div className="rounded-xl border bg-card p-6 shadow-sm">
+              <div className="mb-4">
+                <h3 className="font-semibold text-foreground">Camada Operacional</h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Cobranca e custos da frota vindos de OperationalSnapshot
+                </p>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <KPICard title="Receita operacional" value={formatCurrencyFull(operationalSummary.revenueReceived)} icon={<TrendingUp className="h-5 w-5" />} iconBg="bg-emerald-500/10" iconColor="text-emerald-600" valueColor="text-emerald-600" />
+                <KPICard title="Custo operacional" value={formatCurrencyFull(operationalSummary.operationalCost)} icon={<TrendingDown className="h-5 w-5" />} iconBg="bg-amber-500/10" iconColor="text-amber-600" valueColor="text-amber-600" />
+                <KPICard title="Valor a cobrar" value={formatCurrencyFull(operationalSummary.amountToCharge)} icon={<ArrowDownCircle className="h-5 w-5" />} iconBg="bg-[#022D44]/10" iconColor="text-[#022D44]" />
+                <KPICard title="Resultado operacional" value={formatCurrencyFull(operationalSummary.netOperational)} icon={<Wallet className="h-5 w-5" />} iconBg="bg-blue-500/10" iconColor="text-blue-600" valueColor={operationalSummary.netOperational >= 0 ? 'text-blue-600' : 'text-red-600'} subtext={operationalSummary.pendingReceivables > 0 ? `${formatCurrencyFull(operationalSummary.pendingReceivables)} em aberto` : undefined} />
+              </div>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-xl border bg-card p-6 shadow-sm">

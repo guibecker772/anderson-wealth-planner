@@ -14,7 +14,7 @@ export {
   getBucketLabel,
   generateBuckets,
   getExecDashboardData,
-} from './operational-metrics';
+} from './workbook-metrics';
 
 export function calculateDeltaPct(current: number, previous: number): number | null {
   if (previous === 0) return null;

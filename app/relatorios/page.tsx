@@ -72,6 +72,13 @@ function formatQualitySummary(details: Record<string, unknown> | null): string {
   }
 
   const summary = qualitySummary as Record<string, unknown>;
+  if (summary.operational || summary.financial || summary.fines) {
+    const operational = (summary.operational ?? {}) as Record<string, unknown>;
+    const financial = (summary.financial ?? {}) as Record<string, unknown>;
+    const fines = (summary.fines ?? {}) as Record<string, unknown>;
+    return `Op OK ${operational.OK ?? 0} • Fin OK ${financial.OK ?? 0} • Multas OK ${fines.OK ?? 0}`;
+  }
+
   const byStatus =
     summary.byStatus && typeof summary.byStatus === 'object' && !Array.isArray(summary.byStatus)
       ? (summary.byStatus as Record<string, unknown>)
@@ -83,6 +90,35 @@ function formatWarnings(details: Record<string, unknown> | null): string {
   const warnings = details?.warnings;
   if (!Array.isArray(warnings) || warnings.length === 0) return 'Sem warnings';
   return `${warnings.length} warning(s)`;
+}
+
+function formatSheetSummary(details: Record<string, unknown> | null): string[] {
+  const sheetSummaries = details?.sheetSummaries;
+  if (!Array.isArray(sheetSummaries)) return [];
+
+  return sheetSummaries
+    .map((item) => {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) return null;
+      const summary = item as Record<string, unknown>;
+      const sheet = typeof summary.sheetName === 'string' ? summary.sheetName : 'aba';
+      const domain = typeof summary.domain === 'string' ? summary.domain : 'n/a';
+      const imported = typeof summary.importedRows === 'number' ? summary.importedRows : 0;
+      return `${sheet} (${domain}): ${imported}`;
+    })
+    .filter((value): value is string => Boolean(value));
+}
+
+function formatDeferredSheets(details: Record<string, unknown> | null): string {
+  const deferredSheets = details?.deferredSheets;
+  if (!Array.isArray(deferredSheets) || deferredSheets.length === 0) return 'Sem abas pendentes';
+
+  const names = deferredSheets.map((item) => {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) return 'n/a';
+    const record = item as Record<string, unknown>;
+    return typeof record.sheetName === 'string' ? record.sheetName : 'n/a';
+  });
+
+  return `Pendentes: ${names.join(', ')}`;
 }
 
 export default async function RelatoriosPage({ searchParams }: { searchParams: { from?: string; to?: string } }) {
@@ -186,6 +222,8 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: {
             {files.map((file) => {
               const statusInfo = getProcessingStatusInfo(file.status);
               const details = file.details;
+              const sheetSummary = formatSheetSummary(details);
+              const deferredSheets = formatDeferredSheets(details);
               const primarySheetName =
                 details && typeof details.primarySheetName === 'string'
                   ? details.primarySheetName
@@ -207,6 +245,9 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: {
                     <div className="space-y-1">
                       <div>{file.kind}</div>
                       <div className="text-muted-foreground">{primarySheetName}</div>
+                      {sheetSummary.length > 0 ? (
+                        <div className="text-muted-foreground">{sheetSummary.length} abas importadas</div>
+                      ) : null}
                     </div>
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
@@ -224,6 +265,10 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: {
                     <div>{file.importedRows}/{file.totalRows} linhas importadas</div>
                     <div>{formatWarnings(details)}</div>
                     <div>{formatQualitySummary(details)}</div>
+                    {sheetSummary.slice(0, 3).map((line) => (
+                      <div key={line} className="truncate" title={line}>{line}</div>
+                    ))}
+                    <div className="truncate" title={deferredSheets}>{deferredSheets}</div>
                     {file.errorMessage && <div className="truncate" title={file.errorMessage}>{file.errorMessage}</div>}
                   </TableCell>
                 </TableRow>

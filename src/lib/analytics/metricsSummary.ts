@@ -8,7 +8,7 @@ export {
   getMetricsSummary,
   getMetricsSummaryWithComparison,
   calculatePreviousPeriod,
-} from './operational-metrics';
+} from './workbook-metrics';
 
 export { dateRangeToDbFilter, type DateRangeStrings } from '@/lib/dateRange';
 

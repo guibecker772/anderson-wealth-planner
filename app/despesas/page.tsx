@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { parseDateRangeFromSearchParams } from "@/lib/dateRange";
 import { getMetricsSummaryWithComparison } from "@/lib/analytics/metricsSummary";
 import { getTransactionAnalyticsBundle } from "@/lib/analytics/transaction-metrics";
-import { listOperationalTableRows } from "@/lib/analytics/operational-metrics";
+import { listFinancialTableRows } from "@/lib/analytics/workbook-metrics";
 import { db } from "@/lib/db";
 
 type SearchParams = Record<string, string | undefined>;
@@ -104,7 +104,7 @@ async function getDespesas(searchParams: SearchParams) {
   }
 
   try {
-    let data = await listOperationalTableRows(db, dateRange, 'expense');
+    let data = await listFinancialTableRows(db, dateRange, 'expense');
 
     if (searchParams.status && searchParams.status !== 'ALL') {
       data = data.filter((row) => row.status === searchParams.status);

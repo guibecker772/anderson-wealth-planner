@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
 import { DashboardCharts, type DashboardChartsData } from '@/components/dashboard/DashboardCharts';
 import { parseDateRangeFromSearchParams } from '@/lib/dateRange';
-import { getCashflowSeries, getTopExpenseCategories } from '@/lib/analytics/dashboard';
+import { getDashboardData } from '@/lib/analytics/dashboard';
 import {
   getExecDashboardData,
   type BucketGranularity,
@@ -43,6 +43,28 @@ function getEmptyDashboardData(
     cashflow: [],
     topCategories: [],
     dateRange,
+    financialSummary: {
+      revenue: 0,
+      expense: 0,
+      investments: 0,
+      netCashAfterInvestments: 0,
+      entryCount: 0,
+    },
+    operationalSummary: {
+      revenueReceived: 0,
+      amountToCharge: 0,
+      operationalCost: 0,
+      netOperational: 0,
+      pendingReceivables: 0,
+      fleetStates: [],
+      qualitySummary: {
+        OK: 0,
+        WARNING: 0,
+        REVIEW_REQUIRED: 0,
+        UNKNOWN: 0,
+      },
+      snapshotCount: 0,
+    },
     error: options?.error,
     emptyState: options?.emptyState,
   };
@@ -97,35 +119,27 @@ async function getDashboardPageData(dateRange: { from: string; to: string }) {
 
   try {
     const { db } = await import('@/lib/db');
-    const totalSnapshots = await db.operationalSnapshot.count();
+    const [totalSnapshots, totalFinancialEntries, totalFineRecords] = await Promise.all([
+      db.operationalSnapshot.count(),
+      db.financialEntry.count(),
+      db.fineRecord.count(),
+    ]);
 
-    if (totalSnapshots === 0) {
+    if (totalSnapshots === 0 && totalFinancialEntries === 0 && totalFineRecords === 0) {
       return {
         data: getEmptyDashboardData(dateRange, { emptyState: getDashboardEmptyState() }),
         execData: getEmptyExecDashboardData(dateRange, DEFAULT_BUCKET),
       };
     }
 
-    const [cashflow, topCategories, execData] = await Promise.all([
-      getCashflowSeries(db, dateRange),
-      getTopExpenseCategories(db, dateRange, 8),
+    const [dashboardData, execData] = await Promise.all([
+      getDashboardData(db, dateRange),
       getExecDashboardData(db, dateRange, DEFAULT_BUCKET),
     ]);
 
     return {
       data: {
-        summary: {
-          totalRevenue: execData.summary.incomeReceived,
-          totalExpenses: execData.summary.expensePaid,
-          netProfit: execData.summary.profitCash,
-          pendingPayables: execData.summary.payable,
-          overduePayables: execData.summary.payableOverdue,
-          pendingReceivables: execData.summary.receivable,
-          overdueReceivables: execData.summary.receivableOverdue,
-        },
-        cashflow,
-        topCategories,
-        dateRange,
+        ...dashboardData,
       },
       execData,
     };

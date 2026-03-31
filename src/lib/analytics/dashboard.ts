@@ -4,11 +4,11 @@ export type {
   CategoryExpense,
 } from './operational-metrics';
 
-export { getDashboardData } from './operational-metrics';
+export { getDashboardData } from './workbook-metrics';
 
 import { PrismaClient } from '@prisma/client';
 import { type DateRangeStrings } from '@/lib/dateRange';
-import { getDashboardData } from './operational-metrics';
+import { getDashboardData } from './workbook-metrics';
 
 export async function getDashboardSummary(db: PrismaClient, dateRange: DateRangeStrings) {
   const data = await getDashboardData(db, dateRange);

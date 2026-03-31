@@ -59,11 +59,13 @@ interface FineDetailItem {
   id: string;
   date: string;
   plate: string | null;
+  aitCode?: string | null;
   amount: number;
   status: string;
   investor: string | null;
   driver: string | null;
   description: string | null;
+  counterparty?: string | null;
   qualityStatus?: 'OK' | 'WARNING' | 'REVIEW_REQUIRED' | 'UNKNOWN';
 }
 
@@ -191,7 +193,7 @@ export function MultasContent() {
       <div className="flex flex-col md:flex-row gap-3 p-4 bg-card rounded-xl border shadow-sm">
         <div className="flex items-center gap-3 flex-1">
           <span className="text-sm font-medium text-muted-foreground">Origem:</span>
-          <Badge variant="secondary">Multa/Atraso operacional</Badge>
+          <Badge variant="secondary">FineRecord oficial</Badge>
         </div>
 
         <div className="flex items-center gap-3">
@@ -336,7 +338,7 @@ export function MultasContent() {
             <div>
               <h3 className="font-semibold text-foreground">Detalhamento das Multas</h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Mostrando {fines.length} de {totalFines} registros
+                Mostrando {fines.length} de {totalFines} registros oficiais
               </p>
             </div>
           </div>
@@ -347,11 +349,12 @@ export function MultasContent() {
               <tr>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Periodo</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Placa</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Investidor</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">AIT / Orgao</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Motorista</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Valor</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Qualidade</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Origem</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Veiculo / Investidor</th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -363,14 +366,22 @@ export function MultasContent() {
                   <td className="px-4 py-3 whitespace-nowrap font-mono">
                     {fine.plate || <span className="text-muted-foreground">-</span>}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    {fine.investor || <span className="text-muted-foreground">-</span>}
+                  <td className="px-4 py-3">
+                    <div className="space-y-0.5">
+                      <div className="font-mono">{fine.aitCode || '-'}</div>
+                      <div className="text-xs text-muted-foreground">{fine.counterparty || 'Sem orgao'}</div>
+                    </div>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     {fine.driver || <span className="text-muted-foreground">-</span>}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap font-medium text-amber-600">
                     {formatCurrencyFull(fine.amount)}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <Badge variant={fine.status === 'PAGO' ? 'success' : fine.status === 'ABERTA' ? 'warning' : 'info'} size="sm">
+                      {fine.status}
+                    </Badge>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <Badge
@@ -390,14 +401,17 @@ export function MultasContent() {
                           : 'OK'}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3 max-w-[240px] truncate text-muted-foreground">
-                    {fine.description || '-'}
+                  <td className="px-4 py-3 max-w-[240px]">
+                    <div className="space-y-0.5">
+                      <div className="truncate">{fine.description || '-'}</div>
+                      <div className="truncate text-xs text-muted-foreground">{fine.investor || 'Sem investidor'}</div>
+                    </div>
                   </td>
                 </tr>
               ))}
               {fines.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
                     Nenhuma multa encontrada no periodo
                   </td>
                 </tr>

@@ -24,15 +24,36 @@ export async function GET(req: NextRequest) {
       cashflow: [],
       topCategories: [],
       dateRange,
+      financialSummary: {
+        revenue: 0,
+        expense: 0,
+        investments: 0,
+        netCashAfterInvestments: 0,
+        entryCount: 0,
+      },
+      operationalSummary: {
+        revenueReceived: 0,
+        amountToCharge: 0,
+        operationalCost: 0,
+        netOperational: 0,
+        pendingReceivables: 0,
+        fleetStates: [],
+        qualitySummary: { OK: 0, WARNING: 0, REVIEW_REQUIRED: 0, UNKNOWN: 0 },
+        snapshotCount: 0,
+      },
       error: 'Database not configured',
     });
   }
 
   try {
     const { db } = await import('@/lib/db');
-    const totalSnapshots = await db.operationalSnapshot.count();
+    const [totalSnapshots, totalFinancialEntries, totalFineRecords] = await Promise.all([
+      db.operationalSnapshot.count(),
+      db.financialEntry.count(),
+      db.fineRecord.count(),
+    ]);
 
-    if (totalSnapshots === 0) {
+    if (totalSnapshots === 0 && totalFinancialEntries === 0 && totalFineRecords === 0) {
       return NextResponse.json({
         summary: {
           totalRevenue: 0,
@@ -46,6 +67,23 @@ export async function GET(req: NextRequest) {
         cashflow: [],
         topCategories: [],
         dateRange,
+        financialSummary: {
+          revenue: 0,
+          expense: 0,
+          investments: 0,
+          netCashAfterInvestments: 0,
+          entryCount: 0,
+        },
+        operationalSummary: {
+          revenueReceived: 0,
+          amountToCharge: 0,
+          operationalCost: 0,
+          netOperational: 0,
+          pendingReceivables: 0,
+          fleetStates: [],
+          qualitySummary: { OK: 0, WARNING: 0, REVIEW_REQUIRED: 0, UNKNOWN: 0 },
+          snapshotCount: 0,
+        },
         emptyState: {
           isEmpty: true,
           title: 'Nenhum dado importado ainda',
@@ -76,6 +114,23 @@ export async function GET(req: NextRequest) {
       cashflow: [],
       topCategories: [],
       dateRange,
+      financialSummary: {
+        revenue: 0,
+        expense: 0,
+        investments: 0,
+        netCashAfterInvestments: 0,
+        entryCount: 0,
+      },
+      operationalSummary: {
+        revenueReceived: 0,
+        amountToCharge: 0,
+        operationalCost: 0,
+        netOperational: 0,
+        pendingReceivables: 0,
+        fleetStates: [],
+        qualitySummary: { OK: 0, WARNING: 0, REVIEW_REQUIRED: 0, UNKNOWN: 0 },
+        snapshotCount: 0,
+      },
       error: (error as Error).message,
     });
   }

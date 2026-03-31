@@ -16,4 +16,4 @@ export {
   getTopByClass,
   getVehicleRanking,
   getFinesList,
-} from './operational-metrics';
+} from './workbook-metrics';
