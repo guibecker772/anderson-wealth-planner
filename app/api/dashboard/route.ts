@@ -30,9 +30,9 @@ export async function GET(req: NextRequest) {
 
   try {
     const { db } = await import('@/lib/db');
-    const totalTransactions = await db.transaction.count();
+    const totalSnapshots = await db.operationalSnapshot.count();
 
-    if (totalTransactions === 0) {
+    if (totalSnapshots === 0) {
       return NextResponse.json({
         summary: {
           totalRevenue: 0,
@@ -40,6 +40,8 @@ export async function GET(req: NextRequest) {
           netProfit: 0,
           pendingPayables: 0,
           overduePayables: 0,
+          pendingReceivables: 0,
+          overdueReceivables: 0,
         },
         cashflow: [],
         topCategories: [],
@@ -68,6 +70,8 @@ export async function GET(req: NextRequest) {
         netProfit: 0,
         pendingPayables: 0,
         overduePayables: 0,
+        pendingReceivables: 0,
+        overdueReceivables: 0,
       },
       cashflow: [],
       topCategories: [],

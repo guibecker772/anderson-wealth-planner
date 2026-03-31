@@ -12,7 +12,8 @@ import { getInvestorList } from '@/lib/analytics/investor-metrics';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(_req: NextRequest) {
   try {
-    const result = await getInvestorList();
+    const { db } = await import('@/lib/db');
+    const result = await getInvestorList(db);
     return NextResponse.json(result);
   } catch (error) {
     console.error('[api/investors] Error:', error);

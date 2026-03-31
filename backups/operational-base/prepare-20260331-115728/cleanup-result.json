@@ -1,0 +1,29 @@
+{
+  "executedAt": "2026-03-31T14:57:28.598Z",
+  "backupDir": "C:\\Users\\guilherme.becker\\OneDrive - Liberta\\Área de Trabalho\\ClikFinance\\anderson-wealth-planner\\backups\\operational-base\\prepare-20260331-115728",
+  "deleted": {
+    "deletedOperationalSnapshots": 0,
+    "deletedTransactions": 0,
+    "deletedSourceFiles": 0,
+    "deletedDrivers": 0,
+    "deletedVehicles": 0,
+    "deletedInvestors": 0,
+    "deletedImportBatches": 0
+  },
+  "remaining": {
+    "sourceFiles": 0,
+    "transactions": 0,
+    "categoryNormalizationRules": 0,
+    "importBatches": 0,
+    "operationalSnapshots": 0,
+    "investors": 0,
+    "vehicles": 0,
+    "drivers": 0
+  },
+  "preserved": [
+    "CategoryNormalizationRule",
+    "_prisma_migrations",
+    "schema Prisma",
+    "historico de migrations"
+  ]
+}

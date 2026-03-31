@@ -1,0 +1,37 @@
+{
+  "sourceFiles": [],
+  "transactions": [],
+  "categoryNormalizationRules": [],
+  "importBatches": [],
+  "operationalSnapshots": [],
+  "investors": [],
+  "vehicles": [],
+  "drivers": [],
+  "migrationHistory": [
+    {
+      "migration_name": "20260127235711_init",
+      "finished_at": "2026-03-31T14:55:43.322Z",
+      "rolled_back_at": null
+    },
+    {
+      "migration_name": "20260128014559_add_local_import_support",
+      "finished_at": "2026-03-31T14:55:43.330Z",
+      "rolled_back_at": null
+    },
+    {
+      "migration_name": "20260204020508_add_category_normalization",
+      "finished_at": "2026-03-31T14:55:43.361Z",
+      "rolled_back_at": null
+    },
+    {
+      "migration_name": "20260327173000_add_import_audit_fields",
+      "finished_at": "2026-03-31T14:55:43.375Z",
+      "rolled_back_at": null
+    },
+    {
+      "migration_name": "20260331112000_add_operational_snapshot_base",
+      "finished_at": "2026-03-31T14:55:43.496Z",
+      "rolled_back_at": null
+    }
+  ]
+}

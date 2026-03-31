@@ -2,22 +2,22 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   BarChart,
   Bar,
   Cell,
 } from 'recharts';
-import { 
-  AlertTriangle, 
-  Loader2, 
-  TrendingUp, 
+import {
+  AlertTriangle,
+  Loader2,
+  TrendingUp,
   TrendingDown,
   Car,
   Receipt,
@@ -33,10 +33,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-
-// ============================================================================
-// TYPES
-// ============================================================================
 
 interface SummaryData {
   total: number;
@@ -63,26 +59,20 @@ interface FineDetailItem {
   id: string;
   date: string;
   plate: string | null;
-  aitCode: string | null;
   amount: number;
   status: string;
-  paidBy: string;
-  paidByLabel: string;
+  investor: string | null;
+  driver: string | null;
   description: string | null;
-  counterparty: string | null;
-  category: string | null;
+  qualityStatus?: 'OK' | 'WARNING' | 'REVIEW_REQUIRED' | 'UNKNOWN';
 }
-
-// ============================================================================
-// HELPERS
-// ============================================================================
 
 const CHART_COLORS = {
   fines: '#f59e0b',
 };
 
 const VEHICLE_COLORS = [
-  '#022D44', '#A8CF4C', '#3b82f6', '#f59e0b', 
+  '#022D44', '#A8CF4C', '#3b82f6', '#f59e0b',
   '#8b5cf6', '#ec4899', '#14b8a6', '#f97316',
   '#ef4444', '#22c55e'
 ];
@@ -118,27 +108,10 @@ function formatPct(value: number | null): string {
   return `${sign}${value.toFixed(1)}%`;
 }
 
-function getPaidByLabel(paidBy: string, paidByLabel?: string): string {
-  if (paidByLabel) return paidByLabel;
-  switch (paidBy) {
-    case 'COMPANY': return 'Empresa';
-    case 'LESSOR': return 'Proprietário';
-    case 'UNKNOWN': return 'Indefinido';
-    default: return paidBy;
-  }
-}
-
-// ============================================================================
-// COMPONENT
-// ============================================================================
-
 export function MultasContent() {
   const searchParams = useSearchParams();
   const dateRange = parseDateRangeFromParams(searchParams);
-  
-  const [paidByFilter, setPaidByFilter] = useState<'ALL' | 'COMPANY' | 'LESSOR'>('ALL');
   const [sortBy, setSortBy] = useState<'count' | 'value'>('count');
-  
   const [summary, setSummary] = useState<SummaryData | null>(null);
   const [series, setSeries] = useState<TimeSeriesPoint[]>([]);
   const [vehicles, setVehicles] = useState<VehicleRankingItem[]>([]);
@@ -156,7 +129,7 @@ export function MultasContent() {
         const baseParams = new URLSearchParams({
           from: dateRange.from,
           to: dateRange.to,
-          paidBy: paidByFilter,
+          paidBy: 'ALL',
         });
 
         const [summaryRes, seriesRes, vehiclesRes, finesRes] = await Promise.all([
@@ -190,7 +163,7 @@ export function MultasContent() {
     }
 
     fetchData();
-  }, [dateRange.from, dateRange.to, paidByFilter, sortBy]);
+  }, [dateRange.from, dateRange.to, sortBy]);
 
   if (loading) {
     return (
@@ -210,28 +183,17 @@ export function MultasContent() {
   }
 
   const isPositiveDelta = summary?.deltaValue != null && summary.deltaValue >= 0;
-  // For fines, increase is negative (more expenses)
   const deltaColor = isPositiveDelta ? 'text-red-600' : 'text-emerald-600';
   const DeltaIcon = isPositiveDelta ? TrendingUp : TrendingDown;
 
   return (
     <div className="space-y-6">
-      {/* Filters Row */}
       <div className="flex flex-col md:flex-row gap-3 p-4 bg-card rounded-xl border shadow-sm">
         <div className="flex items-center gap-3 flex-1">
-          <span className="text-sm font-medium text-muted-foreground">Pagador:</span>
-          <Select value={paidByFilter} onValueChange={(v) => setPaidByFilter(v as 'ALL' | 'COMPANY' | 'LESSOR')}>
-            <SelectTrigger className="w-[150px] bg-background">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">Todos</SelectItem>
-              <SelectItem value="COMPANY">Empresa</SelectItem>
-              <SelectItem value="LESSOR">Proprietário</SelectItem>
-            </SelectContent>
-          </Select>
+          <span className="text-sm font-medium text-muted-foreground">Origem:</span>
+          <Badge variant="secondary">Multa/Atraso operacional</Badge>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <span className="text-sm font-medium text-muted-foreground">Ordenar por:</span>
           <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'count' | 'value')}>
@@ -244,11 +206,10 @@ export function MultasContent() {
             </SelectContent>
           </Select>
         </div>
-        
+
         <DateRangeBadge from={dateRange.from} to={dateRange.to} />
       </div>
 
-      {/* KPI Cards */}
       <div className="grid gap-4 md:grid-cols-3">
         <KPICard
           title="Total em Multas"
@@ -259,7 +220,7 @@ export function MultasContent() {
           valueColor="text-amber-600"
         />
         <KPICard
-          title="Quantidade de Infrações"
+          title="Ocorrencias"
           value={String(summary?.count || 0)}
           icon={<Hash className="w-5 h-5" />}
           iconBg="bg-[#022D44]/10"
@@ -268,7 +229,7 @@ export function MultasContent() {
         <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-5">
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <p className="text-sm font-medium text-muted-foreground">Variação vs Anterior</p>
+              <p className="text-sm font-medium text-muted-foreground">Variacao vs Anterior</p>
               <div className={`flex items-center gap-2 mt-2 ${deltaColor}`}>
                 <DeltaIcon className="w-5 h-5" />
                 <span className="text-2xl font-bold">{formatPct(summary?.deltaPct ?? null)}</span>
@@ -281,15 +242,13 @@ export function MultasContent() {
         </div>
       </div>
 
-      {/* Charts Row */}
       <div className="grid gap-6 lg:grid-cols-7">
-        {/* Evolution Chart */}
         <div className="lg:col-span-4 border rounded-xl p-6 bg-card shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="font-semibold text-foreground">Evolução das Multas</h3>
+              <h3 className="font-semibold text-foreground">Evolucao das Multas</h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {formatDateDisplay(dateRange.from)} até {formatDateDisplay(dateRange.to)}
+                {formatDateDisplay(dateRange.from)} ate {formatDateDisplay(dateRange.to)}
               </p>
             </div>
           </div>
@@ -298,27 +257,20 @@ export function MultasContent() {
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={series} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis 
-                    dataKey="date" 
-                    tickFormatter={formatShortDate}
-                    className="text-xs"
-                  />
-                  <YAxis 
-                    tickFormatter={(v) => formatCurrency(v)}
-                    className="text-xs"
-                  />
-                  <Tooltip 
+                  <XAxis dataKey="date" tickFormatter={formatShortDate} className="text-xs" />
+                  <YAxis tickFormatter={(v) => formatCurrency(v)} className="text-xs" />
+                  <Tooltip
                     formatter={(value: number) => formatCurrencyFull(value)}
                     labelFormatter={(label) => formatDateDisplay(label)}
-                    contentStyle={{ 
+                    contentStyle={{
                       backgroundColor: 'hsl(var(--popover))',
                       border: '1px solid hsl(var(--border))',
                       borderRadius: '8px',
                     }}
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="total" 
+                  <Line
+                    type="monotone"
+                    dataKey="total"
                     name="Total"
                     stroke={CHART_COLORS.fines}
                     strokeWidth={2}
@@ -329,16 +281,15 @@ export function MultasContent() {
             </div>
           ) : (
             <div className="h-[250px] flex items-center justify-center bg-muted/20 rounded-md text-muted-foreground">
-              Nenhum dado no período selecionado
+              Nenhum dado no periodo selecionado
             </div>
           )}
         </div>
 
-        {/* Vehicle Ranking */}
         <div className="lg:col-span-3 border rounded-xl p-6 bg-card shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="font-semibold text-foreground">Veículos com Mais Infrações</h3>
+              <h3 className="font-semibold text-foreground">Veiculos com Mais Ocorrencias</h3>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Top 10 por {sortBy === 'count' ? 'quantidade' : 'valor'}
               </p>
@@ -348,40 +299,22 @@ export function MultasContent() {
           {vehicles.length > 0 ? (
             <div className="h-[250px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart 
-                  data={vehicles} 
-                  layout="vertical" 
-                  margin={{ top: 5, right: 30, left: 60, bottom: 5 }}
-                >
+                <BarChart data={vehicles} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis 
-                    type="number"
-                    tickFormatter={(v) => sortBy === 'count' ? String(v) : formatCurrency(v)}
-                    className="text-xs"
-                  />
-                  <YAxis 
-                    type="category" 
-                    dataKey="plate"
-                    className="text-xs"
-                    width={55}
-                    tick={{ fontSize: 11 }}
-                  />
-                  <Tooltip 
+                  <XAxis type="number" tickFormatter={(v) => sortBy === 'count' ? String(v) : formatCurrency(v)} className="text-xs" />
+                  <YAxis type="category" dataKey="plate" className="text-xs" width={55} tick={{ fontSize: 11 }} />
+                  <Tooltip
                     formatter={(value: number, name: string) => [
-                      sortBy === 'count' ? `${value} infrações` : formatCurrencyFull(value),
+                      sortBy === 'count' ? `${value} ocorrencias` : formatCurrencyFull(value),
                       name
                     ]}
-                    contentStyle={{ 
+                    contentStyle={{
                       backgroundColor: 'hsl(var(--popover))',
                       border: '1px solid hsl(var(--border))',
                       borderRadius: '8px',
                     }}
                   />
-                  <Bar 
-                    dataKey={sortBy === 'count' ? 'count' : 'total'} 
-                    name={sortBy === 'count' ? 'Infrações' : 'Valor'} 
-                    radius={[0, 4, 4, 0]}
-                  >
+                  <Bar dataKey={sortBy === 'count' ? 'count' : 'total'} name={sortBy === 'count' ? 'Ocorrencias' : 'Valor'} radius={[0, 4, 4, 0]}>
                     {vehicles.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={VEHICLE_COLORS[index % VEHICLE_COLORS.length]} />
                     ))}
@@ -391,13 +324,12 @@ export function MultasContent() {
             </div>
           ) : (
             <div className="h-[250px] flex items-center justify-center bg-muted/20 rounded-md text-muted-foreground">
-              Nenhum dado no período selecionado
+              Nenhum dado no periodo selecionado
             </div>
           )}
         </div>
       </div>
 
-      {/* Detailed Table */}
       <div className="border rounded-xl bg-card shadow-sm overflow-hidden">
         <div className="p-4 border-b">
           <div className="flex items-center justify-between">
@@ -413,13 +345,13 @@ export function MultasContent() {
           <table className="w-full text-sm">
             <thead className="bg-muted/50">
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Data</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Periodo</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Placa</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">AIT</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Investidor</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Motorista</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Valor</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Pagador</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Descrição</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Qualidade</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Origem</th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -431,34 +363,42 @@ export function MultasContent() {
                   <td className="px-4 py-3 whitespace-nowrap font-mono">
                     {fine.plate || <span className="text-muted-foreground">-</span>}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap font-mono text-xs">
-                    {fine.aitCode || <span className="text-muted-foreground">-</span>}
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    {fine.investor || <span className="text-muted-foreground">-</span>}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    {fine.driver || <span className="text-muted-foreground">-</span>}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap font-medium text-amber-600">
                     {formatCurrencyFull(fine.amount)}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <Badge variant={fine.status === 'SETTLED' ? 'success' : 'warning'} size="sm">
-                      {fine.status === 'SETTLED' ? 'Pago' : 'Pendente'}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <Badge 
-                      variant={fine.paidBy === 'LESSOR' ? 'default' : 'secondary'} 
+                    <Badge
+                      variant={
+                        fine.qualityStatus === 'REVIEW_REQUIRED'
+                          ? 'warning'
+                          : fine.qualityStatus === 'WARNING'
+                            ? 'info'
+                            : 'success'
+                      }
                       size="sm"
                     >
-                      {getPaidByLabel(fine.paidBy, fine.paidByLabel)}
+                      {fine.qualityStatus === 'REVIEW_REQUIRED'
+                        ? 'Revisar'
+                        : fine.qualityStatus === 'WARNING'
+                          ? 'Alerta'
+                          : 'OK'}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3 max-w-[200px] truncate text-muted-foreground">
-                    {fine.description || fine.counterparty || '-'}
+                  <td className="px-4 py-3 max-w-[240px] truncate text-muted-foreground">
+                    {fine.description || '-'}
                   </td>
                 </tr>
               ))}
               {fines.length === 0 && (
                 <tr>
                   <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
-                    Nenhuma multa encontrada no período
+                    Nenhuma multa encontrada no periodo
                   </td>
                 </tr>
               )}
@@ -470,17 +410,17 @@ export function MultasContent() {
   );
 }
 
-function KPICard({ 
-  title, 
-  value, 
-  icon, 
+function KPICard({
+  title,
+  value,
+  icon,
   subtext,
   iconBg = 'bg-muted',
   iconColor = 'text-foreground',
   valueColor = ''
-}: { 
-  title: string; 
-  value: string; 
+}: {
+  title: string;
+  value: string;
   icon?: React.ReactNode;
   subtext?: string;
   iconBg?: string;

@@ -18,6 +18,7 @@ interface Transaction {
   status: string;
   categorySource?: 'RAW' | 'NORMALIZED' | 'MANUAL' | null;
   normalizedAt?: string | Date | null;
+  qualityStatus?: 'OK' | 'WARNING' | 'REVIEW_REQUIRED' | 'UNKNOWN' | null;
 }
 
 interface TransactionTableProps {
@@ -85,9 +86,16 @@ export function TransactionTable({ data, page, totalPages, type }: TransactionTa
                     {tx.actualAmount ? formatCurrency(Number(tx.actualAmount)) : <span className="text-muted-foreground">—</span>}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={statusInfo.variant as BadgeProps['variant']}>
-                      {statusInfo.label}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={statusInfo.variant as BadgeProps['variant']}>
+                        {statusInfo.label}
+                      </Badge>
+                      {tx.qualityStatus && tx.qualityStatus !== 'OK' && tx.qualityStatus !== 'UNKNOWN' && (
+                        <Badge variant={tx.qualityStatus === 'REVIEW_REQUIRED' ? 'warning' : 'info'}>
+                          {tx.qualityStatus === 'REVIEW_REQUIRED' ? 'Revisar' : 'Alerta'}
+                        </Badge>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               );

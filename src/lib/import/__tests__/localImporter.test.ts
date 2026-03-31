@@ -53,7 +53,6 @@ describe('localImporter helpers', () => {
         name: 'planilha teste carros',
         rows: [
           [
-            'Situacao de pagamento',
             'Data',
             'Semana',
             'Contrato ativo',
@@ -71,7 +70,6 @@ describe('localImporter helpers', () => {
             'Multa',
           ],
           [
-            'Pago',
             'Fevereiro',
             2,
             'Sim',
@@ -89,7 +87,6 @@ describe('localImporter helpers', () => {
             5,
           ],
           [
-            'Pendente',
             'Janeiro',
             null,
             'Sim',
@@ -106,6 +103,61 @@ describe('localImporter helpers', () => {
             null,
             null,
           ],
+          [
+            'Janeiro',
+            4,
+            'Sim',
+            'Locado',
+            'XYZ1A23',
+            'Argo',
+            'Victor',
+            null,
+            500,
+            null,
+            500,
+            0,
+            null,
+            null,
+          ],
+          [
+            'Janeiro',
+            4,
+            'Sim',
+            'Locado',
+            'XYZ1A23',
+            'Argo',
+            'Victor',
+            null,
+            500,
+            null,
+            500,
+            0,
+            null,
+            null,
+          ],
+          [
+            'Marco',
+            1,
+            'Sim',
+            'Locado',
+            'JKL9M87',
+            'Kwid',
+            'Victor',
+            null,
+            746.99,
+            null,
+            'F',
+            '#VALUE!',
+            null,
+            746,
+          ],
+        ],
+      },
+      {
+        name: 'Receita',
+        rows: [
+          ['Data', 'Categoria', 'Fornecedor', 'Valor'],
+          ['01/02/2026', 'Receita auxiliar', 'Ignorar', 999],
         ],
       },
     ]);
@@ -114,10 +166,12 @@ describe('localImporter helpers', () => {
 
     expect(parsed.kind).toBe('OPERATIONAL');
     expect(parsed.sheetNames).toEqual(['planilha teste carros']);
-    expect(parsed.rows).toHaveLength(2);
+    expect(parsed.rows).toHaveLength(4);
 
     const firstRow = parsed.rows[0];
     const secondRow = parsed.rows[1];
+    const zeroChargeRow = parsed.rows[2];
+    const invalidValueRow = parsed.rows[3];
 
     expect(firstRow.type).toBe('RECEIVABLE');
     expect(firstRow.status).toBe('SETTLED');
@@ -128,9 +182,14 @@ describe('localImporter helpers', () => {
     expect(firstRow.discount).toBe(10);
     expect(firstRow.dueDate?.toISOString().slice(0, 10)).toBe('2026-02-08');
     expect((firstRow.rawJson.__import as Record<string, unknown>).ownerNormalized).toBe('Victor');
+    expect((firstRow.rawJson.__import as Record<string, unknown>).paymentStatus).toBeNull();
     expect(((firstRow.rawJson.__import as Record<string, unknown>).dateInference as Record<string, unknown>).strategy).toBe(
       'month-text-plus-week'
     );
+    expect(firstRow.operationalSnapshot?.paymentStatusRaw).toBeNull();
+    expect(firstRow.operationalSnapshot?.paymentState).toBe('PARTIAL');
+    expect(firstRow.operationalSnapshot?.openAmount).toBe(120);
+    expect((firstRow.operationalSnapshot?.rawJson.__quality as Record<string, unknown>).status).toBe('OK');
 
     expect(secondRow.status).toBe('PENDING');
     expect(secondRow.actualAmount).toBeNull();
@@ -139,6 +198,21 @@ describe('localImporter helpers', () => {
     expect(((secondRow.rawJson.__import as Record<string, unknown>).dateInference as Record<string, unknown>).strategy).toBe(
       'month-text-fallback-first-day'
     );
+
+    expect(zeroChargeRow.operationalSnapshot?.amountToCharge).toBe(0);
+    expect(zeroChargeRow.operationalSnapshot?.paymentState).toBe('UNKNOWN');
+    expect(zeroChargeRow.operationalSnapshot?.openAmount).toBe(0);
+    expect((zeroChargeRow.operationalSnapshot?.rawJson.__quality as Record<string, unknown>).status).toBe('OK');
+
+    expect(invalidValueRow.operationalSnapshot?.amountToCharge).toBeNull();
+    expect(invalidValueRow.operationalSnapshot?.paymentState).toBe('PARTIAL');
+    expect(invalidValueRow.operationalSnapshot?.openAmount).toBe(0.99);
+    expect((invalidValueRow.operationalSnapshot?.rawJson.__quality as Record<string, unknown>).status).toBe(
+      'REVIEW_REQUIRED'
+    );
+    expect(parsed.warnings).toContain('Aba planilha teste carros, linha 5: duplicata exata da origem ignorada');
+    expect(parsed.warnings).toContain('Aba planilha teste carros, linha 6: Valor à Cobrar inválido (#VALUE!)');
+    expect(parsed.warnings).toContain('Aba planilha teste carros, linha 6: Desconto inválido (F)');
   });
 
   it('parses the fines report layout and preserves payer metadata', async () => {
@@ -163,5 +237,87 @@ describe('localImporter helpers', () => {
     expect((parsed.rows[0].rawJson.__import as Record<string, unknown>).renavam).toBe('123456789');
     expect((parsed.rows[0].rawJson.__import as Record<string, unknown>).paidByOriginal).toBe('Motorista');
     expect((parsed.rows[0].rawJson.__import as Record<string, unknown>).paidByNormalized).toBe('DRIVER');
+  });
+
+  it('parses the complete workbook and splits operational, financial and fines domains', async () => {
+    const buffer = await createWorkbookBuffer([
+      {
+        name: 'planilha teste carros',
+        rows: [
+          [
+            'Data',
+            'Semana',
+            'Contrato ativo',
+            'Situacao de veiculo',
+            'Placa',
+            'Modelo',
+            'Proprietario',
+            'Motorista',
+            'Valor contrato',
+            'Multa/atraso',
+            'Desconto',
+            'Valor a Cobrar',
+            'Manutencao por motorista',
+            'Valor Pago (Semana)',
+          ],
+          ['01/02/2026', 1, 'Sim', 'Locado', 'ABC1D23', 'Onix', 'CLIKCAR/VICTOR', 'Jose', 1000, 50, 0, 1050, 10, 1000],
+        ],
+      },
+      {
+        name: 'Receita',
+        rows: [
+          ['Origem', 'Valor R$', 'Destino', 'Data', 'Mês', 'Ano'],
+          ['Receita Carros', 2500, 'Banrisul', '05/02/2026', 'Fevereiro', 2026],
+        ],
+      },
+      {
+        name: 'Despesa',
+        rows: [
+          ['Tipo de Gasto', 'Detalhamento', 'Categoria', 'Valor R$', 'Fonte', 'Data', 'Mês', 'Ano'],
+          ['Pagamento de Multas', 'Auto 1', 'Despesa Variável', 300, 'Banrisul', '06/02/2026', 'Fevereiro', 2026],
+        ],
+      },
+      {
+        name: 'Investimentos',
+        rows: [
+          ['Investimento', 'Valor R$', 'Fonte', 'Data', 'Mês', 'Ano'],
+          ['Consórcio', 900, 'Banrisul', '07/02/2026', 'Fevereiro', 2026],
+        ],
+      },
+      {
+        name: 'Multas',
+        rows: [
+          ['Órgão autuador', 'Condutor', 'Paga', 'Valor', 'Placa', 'Auto de infração', 'Veículo', 'Data da infração'],
+          ['DETRAN', 'Jose', 'NÃO', 195.23, 'ABC-1D23', 'AIT-900', 'Onix', '08/02/2026'],
+        ],
+      },
+      {
+        name: 'Quem Pagou',
+        rows: [['PLACA', 'data Infração', 'data do pagamento', 'VALOR', 'Pago para'], ['ABC1D23', '08/02/2026', '10/02/2026', 195.23, 'CLIK']],
+      },
+      {
+        name: 'Lucro',
+        rows: [['Total Despesa', 'Total Receita', 'Lucro', 'Porcentagem', 'Data'], [300, 2500, 2200, 0.88, 'Fevereiro']],
+      },
+    ]);
+
+    const parsed = await parseWorkbookBufferForTest(buffer, 'workbook-completo-2026.xlsm');
+
+    expect(parsed.kind).toBe('WORKBOOK');
+    expect(parsed.operationalRows).toHaveLength(1);
+    expect(parsed.financialRows).toHaveLength(3);
+    expect(parsed.fineRows).toHaveLength(1);
+    expect(parsed.sheetNames).toEqual(
+      expect.arrayContaining(['planilha teste carros', 'Receita', 'Despesa', 'Investimentos', 'Multas'])
+    );
+    expect(parsed.deferredSheets).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ sheetName: 'Quem Pagou' }),
+        expect.objectContaining({ sheetName: 'Lucro' }),
+      ])
+    );
+    expect(parsed.financialRows.map((row) => row.domain)).toEqual(expect.arrayContaining(['REVENUE', 'EXPENSE', 'INVESTMENT']));
+    expect(parsed.fineRows[0].ait).toBe('AIT-900');
+    expect(parsed.fineRows[0].paymentState).toBe('UNPAID');
   });
 });

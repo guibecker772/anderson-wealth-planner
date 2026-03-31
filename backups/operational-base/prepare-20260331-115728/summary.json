@@ -1,0 +1,24 @@
+{
+  "startedAt": "2026-03-31T14:57:28.362Z",
+  "databaseUrl": "postgresql:********@localhost:5432/anderson_wealth?schema=public",
+  "counts": {
+    "sourceFiles": 0,
+    "transactions": 0,
+    "categoryNormalizationRules": 0,
+    "importBatches": 0,
+    "operationalSnapshots": 0,
+    "investors": 0,
+    "vehicles": 0,
+    "drivers": 0,
+    "uniqueFileHashes": 0,
+    "uniqueLegacyRowHashes": 0,
+    "uniqueOperationalRowHashes": 0
+  },
+  "sourceFilesByKind": [],
+  "transactionsByType": [],
+  "notes": [
+    "SourceFile e Transaction sao preservados no schema, mas o preparo operacional zera os dados antigos para eliminar conflitos de hash e deduplicacao.",
+    "CategoryNormalizationRule e historico de migrations sao preservados.",
+    "OperationalSnapshot passa a ser a nova base operacional semanal por veiculo."
+  ]
+}

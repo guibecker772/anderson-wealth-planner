@@ -1,13 +1,13 @@
 import { Suspense } from "react";
-import { Prisma } from '@prisma/client';
 import { TransactionTable } from "@/components/transactions/TransactionTable";
 import { TransactionFilters } from "@/components/transactions/TransactionFilters";
 import { TransactionAnalyticsPanel } from "@/components/analytics/TransactionAnalyticsPanel";
 import { MetricsSummaryCards } from "@/components/metrics/MetricsSummaryCards";
 import { Badge } from "@/components/ui/badge";
-import { parseDateRangeFromSearchParams, dateRangeToDbFilter } from "@/lib/dateRange";
+import { parseDateRangeFromSearchParams } from "@/lib/dateRange";
 import { getMetricsSummaryWithComparison } from "@/lib/analytics/metricsSummary";
 import { getTransactionAnalyticsBundle } from "@/lib/analytics/transaction-metrics";
+import { listOperationalTableRows } from "@/lib/analytics/operational-metrics";
 import { db } from "@/lib/db";
 
 type SearchParams = Record<string, string | undefined>;
@@ -97,63 +97,30 @@ function getEmptyAnalytics(dateRange: { from: string; to: string }) {
 async function getDespesas(searchParams: SearchParams) {
   const page = Math.max(1, parseInt(searchParams.page || '1'));
   const pageSize = 20;
-
   const dateRange = parseDateRangeFromSearchParams(searchParams);
 
   if (!process.env.DATABASE_URL) {
     return { data: [], meta: { page, totalPages: 1, total: 0 } };
   }
 
-  const dbDateFilter = dateRangeToDbFilter(dateRange);
-
-  const where: Prisma.TransactionWhereInput = {
-    type: 'PAYABLE',
-    dueDate: {
-      gte: dbDateFilter.gte,
-      lte: dbDateFilter.lte,
-    },
-  };
-
-  if (searchParams.status && searchParams.status !== 'ALL') {
-    where.status = searchParams.status as 'PENDING' | 'SETTLED';
-  }
-  if (searchParams.category) {
-    where.category = searchParams.category;
-  }
-  if (searchParams.q) {
-    where.OR = [
-      { description: { contains: searchParams.q, mode: 'insensitive' } },
-      { counterparty: { contains: searchParams.q, mode: 'insensitive' } },
-      { externalId: { contains: searchParams.q, mode: 'insensitive' } },
-    ];
-  }
-
   try {
-    const [count, rawData] = await Promise.all([
-      db.transaction.count({ where }),
-      db.transaction.findMany({
-        where,
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-        orderBy: { dueDate: 'desc' },
-        select: {
-          id: true,
-          dueDate: true,
-          counterparty: true,
-          category: true,
-          plannedAmount: true,
-          actualAmount: true,
-          status: true,
-          categorySource: true,
-        },
-      }),
-    ]);
+    let data = await listOperationalTableRows(db, dateRange, 'expense');
 
-    const data = rawData.map(tx => ({
-      ...tx,
-      plannedAmount: tx.plannedAmount ? Number(tx.plannedAmount) : null,
-      actualAmount: tx.actualAmount ? Number(tx.actualAmount) : null,
-    }));
+    if (searchParams.status && searchParams.status !== 'ALL') {
+      data = data.filter((row) => row.status === searchParams.status);
+    }
+    if (searchParams.category) {
+      data = data.filter((row) => row.category?.includes(searchParams.category as string));
+    }
+    if (searchParams.q) {
+      const q = searchParams.q.toLowerCase();
+      data = data.filter((row) =>
+        `${row.counterparty || ''} ${row.category || ''}`.toLowerCase().includes(q)
+      );
+    }
+
+    const count = data.length;
+    data = data.slice((page - 1) * pageSize, page * pageSize);
 
     return {
       data,

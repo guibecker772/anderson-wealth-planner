@@ -77,6 +77,12 @@ function getEmptyExecDashboardData(
     dateRange,
     previousRange: dateRange,
     bucket,
+    qualitySummary: {
+      OK: 0,
+      WARNING: 0,
+      REVIEW_REQUIRED: 0,
+      UNKNOWN: 0,
+    },
     error,
   };
 }
@@ -91,9 +97,9 @@ async function getDashboardPageData(dateRange: { from: string; to: string }) {
 
   try {
     const { db } = await import('@/lib/db');
-    const totalTransactions = await db.transaction.count();
+    const totalSnapshots = await db.operationalSnapshot.count();
 
-    if (totalTransactions === 0) {
+    if (totalSnapshots === 0) {
       return {
         data: getEmptyDashboardData(dateRange, { emptyState: getDashboardEmptyState() }),
         execData: getEmptyExecDashboardData(dateRange, DEFAULT_BUCKET),

@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Users } from "lucide-react";
 import { parseDateRangeFromSearchParams } from "@/lib/dateRange";
 import { getInvestorList } from "@/lib/analytics/investor-metrics";
+import { db } from "@/lib/db";
 
 interface InvestidoresPageProps {
   searchParams: { from?: string; to?: string };
@@ -13,7 +14,7 @@ async function InvestidoresSection({ searchParams }: InvestidoresPageProps) {
   const dateRange = parseDateRangeFromSearchParams(searchParams);
 
   try {
-    const data = await getInvestorList();
+    const data = await getInvestorList(db);
     return <InvestidoresContent data={data} dateRange={dateRange} />;
   } catch (error) {
     return (

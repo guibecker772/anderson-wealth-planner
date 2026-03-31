@@ -36,7 +36,7 @@ import {
 } from './deviceFolderAccess';
 
 type EffectiveSourceMode = 'AUTO_FOLDER' | 'MANUAL_UPLOAD' | 'DEVICE_FOLDER';
-type SourceFileKind = 'OPERATIONAL' | 'FINES' | 'UNKNOWN';
+type SourceFileKind = 'OPERATIONAL' | 'FINES' | 'FINANCIAL' | 'WORKBOOK' | 'UNKNOWN';
 type SourceImportMode = 'AUTO_FOLDER' | 'MANUAL_UPLOAD';
 
 interface ImportLogEntry {
@@ -483,6 +483,8 @@ export function LocalImportCard({ initialStatus, initialMessage = null }: LocalI
   const kindLabel = (kind: SourceFileKind) => {
     if (kind === 'OPERATIONAL') return 'Operacional';
     if (kind === 'FINES') return 'Infracoes';
+    if (kind === 'FINANCIAL') return 'Financeiro';
+    if (kind === 'WORKBOOK') return 'Workbook';
     return 'Nao identificado';
   };
 

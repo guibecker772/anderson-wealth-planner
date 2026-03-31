@@ -275,7 +275,7 @@ export async function moveDeviceInboxFile(params: {
   fileHandle: FileSystemFileHandle;
   target: 'processed' | 'error';
   archive?: {
-    kind: 'OPERATIONAL' | 'FINES' | 'UNKNOWN';
+    kind: 'OPERATIONAL' | 'FINES' | 'FINANCIAL' | 'WORKBOOK' | 'UNKNOWN';
     archivePeriod: string | null;
   };
 }): Promise<void> {

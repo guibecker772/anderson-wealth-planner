@@ -31,12 +31,12 @@ export function InvestorDetailContent({ data, dateRange, error }: InvestorDetail
     return (
       <div className="flex flex-col items-center justify-center h-[400px] text-destructive">
         <AlertTriangle className="w-8 h-8 mb-3" />
-        <p>{error || 'Investidor nÃ£o encontrado'}</p>
+        <p>{error || 'Investidor nao encontrado'}</p>
         <Link
           href={`/investidores?from=${dateRange.from}&to=${dateRange.to}`}
           className="mt-4 text-sm text-muted-foreground hover:text-foreground"
         >
-          â† Voltar para lista
+          Voltar para lista
         </Link>
       </div>
     );
@@ -61,7 +61,7 @@ export function InvestorDetailContent({ data, dateRange, error }: InvestorDetail
             {investor.name}
           </h2>
           <p className="text-muted-foreground text-sm mt-1">
-            {investor.vehicles.length} veÃ­culo(s) vinculado(s)
+            {investor.vehicles.length} veiculo(s) vinculado(s)
           </p>
         </div>
         <DateRangeBadge from={dateRange.from} to={dateRange.to} />
@@ -69,7 +69,7 @@ export function InvestorDetailContent({ data, dateRange, error }: InvestorDetail
 
       <div className="grid gap-4 md:grid-cols-4">
         <KPICard
-          title="Retorno LocaÃ§Ã£o"
+          title="Receita Recebida"
           value={formatCurrencyFull(totals.rentalIncome)}
           icon={<TrendingUp className="w-5 h-5" />}
           iconBg="bg-emerald-500/10"
@@ -77,12 +77,13 @@ export function InvestorDetailContent({ data, dateRange, error }: InvestorDetail
           valueColor="text-emerald-600"
         />
         <KPICard
-          title="ManutenÃ§Ã£o"
-          value={formatCurrencyFull(totals.maintenanceCost)}
+          title="Manutencao"
+          value={formatCurrencyFull(totals.maintenanceCost + totals.discountCost)}
           icon={<Wrench className="w-5 h-5" />}
           iconBg="bg-blue-500/10"
           iconColor="text-blue-600"
           valueColor="text-blue-600"
+          subtext={`Descontos operacionais: ${formatCurrencyFull(totals.discountCost)}`}
         />
         <KPICard
           title="Multas"
@@ -93,7 +94,7 @@ export function InvestorDetailContent({ data, dateRange, error }: InvestorDetail
           valueColor="text-amber-600"
         />
         <KPICard
-          title="Resultado LÃ­quido"
+          title="Resultado Liquido"
           value={formatCurrencyFull(totals.netResult)}
           icon={isPositiveResult ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
           iconBg={isPositiveResult ? "bg-emerald-500/10" : "bg-red-500/10"}
@@ -106,7 +107,7 @@ export function InvestorDetailContent({ data, dateRange, error }: InvestorDetail
         <div className="p-4 border-b">
           <div className="flex items-center gap-2">
             <Car className="w-5 h-5 text-muted-foreground" />
-            <h3 className="font-semibold text-foreground">Detalhamento por VeÃ­culo</h3>
+            <h3 className="font-semibold text-foreground">Detalhamento por Veiculo</h3>
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -114,9 +115,9 @@ export function InvestorDetailContent({ data, dateRange, error }: InvestorDetail
             <thead className="bg-muted/50">
               <tr>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Placa</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">SituaÃ§Ã£o</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground">LocaÃ§Ã£o</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground">ManutenÃ§Ã£o</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Situacao</th>
+                <th className="px-4 py-3 text-right font-medium text-muted-foreground">Recebido</th>
+                <th className="px-4 py-3 text-right font-medium text-muted-foreground">Custos</th>
                 <th className="px-4 py-3 text-right font-medium text-muted-foreground">Multas</th>
                 <th className="px-4 py-3 text-right font-medium text-muted-foreground">Resultado</th>
               </tr>
@@ -124,15 +125,23 @@ export function InvestorDetailContent({ data, dateRange, error }: InvestorDetail
             <tbody className="divide-y">
               {vehicles.map((vehicle) => {
                 const isPositive = vehicle.netResult >= 0;
+                const warningCount = vehicle.qualitySummary.WARNING + vehicle.qualitySummary.REVIEW_REQUIRED;
                 return (
                   <tr key={vehicle.plate} className="hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className="font-mono font-medium">{vehicle.plate}</span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <Badge variant="secondary" size="sm">
-                        {vehicle.status}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" size="sm">
+                          {vehicle.status}
+                        </Badge>
+                        {warningCount > 0 && (
+                          <Badge variant="warning" size="sm">
+                            {warningCount} alerta(s)
+                          </Badge>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-right whitespace-nowrap text-emerald-600">
                       {formatCurrencyFull(vehicle.rentalIncome)}
@@ -152,7 +161,7 @@ export function InvestorDetailContent({ data, dateRange, error }: InvestorDetail
               {vehicles.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                    Nenhum veÃ­culo encontrado para este investidor
+                    Nenhum veiculo encontrado para este investidor
                   </td>
                 </tr>
               )}
@@ -164,10 +173,10 @@ export function InvestorDetailContent({ data, dateRange, error }: InvestorDetail
       <div className="bg-muted/30 rounded-xl border p-4">
         <h4 className="font-medium text-sm mb-2">Notas</h4>
         <ul className="text-xs text-muted-foreground space-y-1">
-          <li>â€¢ <strong>LocaÃ§Ã£o:</strong> Receitas com tipo &quot;LocaÃ§Ã£o&quot; vinculadas ao veÃ­culo</li>
-          <li>â€¢ <strong>ManutenÃ§Ã£o:</strong> Despesas das categorias de manutenÃ§Ã£o/reparos</li>
-          <li>â€¢ <strong>Multas:</strong> Despesas da categoria Multas-Correios-Detran</li>
-          <li>â€¢ <strong>SituaÃ§Ã£o:</strong> Campo placeholder - definiÃ§Ã£o pendente de regra de negÃ³cio</li>
+          <li>Receita recebida usa `Valor Pago (Semana)` da base operacional.</li>
+          <li>Custos incluem manutencao por motorista e descontos operacionais.</li>
+          <li>Multas usam `Multa/atraso` da planilha operacional.</li>
+          <li>Situacao do veiculo vem do snapshot operacional mais recente no periodo.</li>
         </ul>
       </div>
     </div>

@@ -64,9 +64,9 @@ export async function GET(req: NextRequest) {
 
   try {
     const { db } = await import('@/lib/db');
-    const totalTransactions = await db.transaction.count();
+    const totalSnapshots = await db.operationalSnapshot.count();
 
-    if (totalTransactions === 0) {
+    if (totalSnapshots === 0) {
       return NextResponse.json({
         summary: {
           incomeReceived: 0,
