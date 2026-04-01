@@ -14,3 +14,4 @@
  GET /dashboard 200 in 15149ms
  HEAD /dashboard 200 in 15175ms
  HEAD /dashboard 200 in 40ms
+ ✓ Compiled in 1412ms (999 modules)

@@ -85,7 +85,7 @@ export function Sidebar() {
               <span className="text-white">Clik</span>
               <span className="text-[#A8CF4C]">Finance</span>
             </span>
-            <p className="mt-0.5 text-[10px] uppercase tracking-[0.12em] text-white/56">Control Center</p>
+            <p className="mt-0.5 text-[10px] uppercase tracking-[0.1em] text-white/82">Control Center</p>
           </div>
         </Link>
       </div>
@@ -93,7 +93,7 @@ export function Sidebar() {
       <nav className="relative flex-1 space-y-6 overflow-y-auto px-3 pb-4 pt-2 scrollbar-none">
         {navGroups.map((group) => (
           <div key={group.label}>
-            <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[0.1em] text-white/52">
+            <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#A8CF4C]">
               {group.label}
             </p>
             <div className="space-y-1.5">
@@ -105,12 +105,12 @@ export function Sidebar() {
                   return (
                     <div
                       key={item.href}
-                      className="flex cursor-not-allowed items-center gap-3 rounded-2xl border border-white/[0.04] px-3 py-3 text-[13px] font-medium text-white/24"
+                      className="flex cursor-not-allowed items-center gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.03] px-3 py-3 text-[13px] font-medium text-white/80"
                     >
-                      <Icon className="h-[18px] w-[18px] shrink-0" />
+                      <Icon className="h-[18px] w-[18px] shrink-0 text-white/80" />
                       <span className="flex-1">{item.label}</span>
                       {item.badge ? (
-                        <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[0.14em] text-white/34">
+                        <span className="rounded-full bg-white/[0.12] px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[0.12em] text-white/90">
                           {item.badge}
                         </span>
                       ) : null}
@@ -147,14 +147,14 @@ export function Sidebar() {
       </nav>
 
       <div className="relative border-t border-white/[0.06] px-4 py-4">
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] px-3 py-3">
+        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] px-3 py-3">
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-[#A8CF4C]" />
-            <span className="text-[11px] text-white/54">
-              <span className="font-medium text-white/74">ClikFinance</span> v1.0.0
+            <span className="text-[11px] text-white/90">
+              <span className="font-medium text-white">ClikFinance</span> v1.0.0
             </span>
           </div>
-          <p className="mt-2 text-[11px] leading-5 text-white/52">
+          <p className="mt-2 text-[11px] leading-5 text-white/85">
             Camadas operacional, financeira e multas sincronizadas no mesmo cockpit.
           </p>
         </div>

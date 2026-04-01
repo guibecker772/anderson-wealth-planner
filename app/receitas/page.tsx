@@ -10,8 +10,34 @@ import { getMetricsSummaryWithComparison } from "@/lib/analytics/metricsSummary"
 import { getTransactionAnalyticsBundle } from "@/lib/analytics/transaction-metrics";
 import { listFinancialTableRows } from "@/lib/analytics/workbook-metrics";
 import { db } from "@/lib/db";
+import { endOfMonth, format, startOfMonth } from "date-fns";
 
 type SearchParams = Record<string, string | undefined>;
+
+async function resolveReceitasDateRange(searchParams: SearchParams) {
+  const explicitDateRange = parseDateRangeFromSearchParams(searchParams);
+  if (searchParams.from && searchParams.to) {
+    return explicitDateRange;
+  }
+
+  if (!process.env.DATABASE_URL) {
+    return explicitDateRange;
+  }
+
+  const latestEntry = await db.financialEntry.aggregate({
+    where: { domain: 'REVENUE' },
+    _max: { entryDate: true },
+  });
+
+  if (!latestEntry._max.entryDate) {
+    return explicitDateRange;
+  }
+
+  return {
+    from: format(startOfMonth(latestEntry._max.entryDate), 'yyyy-MM-dd'),
+    to: format(endOfMonth(latestEntry._max.entryDate), 'yyyy-MM-dd'),
+  };
+}
 
 function getEmptyMetrics(dateRange: { from: string; to: string }) {
   return {
@@ -163,8 +189,8 @@ async function ReceitasAnalyticsSection({ dateRange }: { dateRange: { from: stri
 }
 
 export default async function ReceitasPage({ searchParams }: { searchParams: SearchParams }) {
-  const { data, meta } = await getReceitas(searchParams);
-  const dateRange = parseDateRangeFromSearchParams(searchParams);
+  const dateRange = await resolveReceitasDateRange(searchParams);
+  const { data, meta } = await getReceitas({ ...searchParams, from: dateRange.from, to: dateRange.to });
 
   return (
     <div className="page-shell">

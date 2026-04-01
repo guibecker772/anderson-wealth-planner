@@ -170,20 +170,20 @@ export function InvestorDetailContent({ data, dateRange, error }: InvestorDetail
 
         <div className="module-surface module-surface-financial">
           <div className="section-heading">
-            <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/14 bg-white/10 text-white">
+            <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/22 bg-white/16 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
               <Landmark className="h-5 w-5" />
             </div>
             <div>
-              <h2>Notas de leitura</h2>
-              <p>O resultado individual nao tenta fingir completude onde ainda nao existe vinculacao confiavel.</p>
+              <h2 className="text-white">Notas de leitura</h2>
+              <p className="text-white/88">O resultado individual nao tenta fingir completude onde ainda nao existe vinculacao confiavel.</p>
             </div>
           </div>
-          <ul className="space-y-3 text-sm leading-7 text-white/82">
+          <ul className="space-y-3 text-sm leading-7 text-white/92">
             <li>Receita operacional usa Valor Pago (Semana) da base operacional.</li>
             <li>Custo operacional inclui manutencao, desconto e multa/atraso operacional.</li>
             <li>Financeiro identificado so considera vinculo forte e auditavel por nome explicito do investidor.</li>
             <li>Impostos, juros, despesa fixa, nao identificado, repasses ambiguos e multas oficiais sem Quem Pagou seguem fora do resultado individual.</li>
-            <li className="text-white/70">{allocationSummary.linkageCoverageNote}</li>
+            <li className="text-white/84">{allocationSummary.linkageCoverageNote}</li>
           </ul>
         </div>
       </div>

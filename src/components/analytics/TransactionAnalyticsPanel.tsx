@@ -102,6 +102,7 @@ export function TransactionAnalyticsPanel({ scope, dateRange, data }: Transactio
           </div>
           <div className="chart-panel px-4 py-5 sm:px-6">
             {series.length > 0 ? (
+              <div className="h-[280px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={series} margin={{ top: 8, right: 10, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" />
@@ -115,6 +116,7 @@ export function TransactionAnalyticsPanel({ scope, dateRange, data }: Transactio
                   <Line type="monotone" dataKey="total" name="Total" stroke={chartColor} strokeWidth={2.8} dot={series.length < 15} />
                 </LineChart>
               </ResponsiveContainer>
+              </div>
             ) : (
               <div className="premium-empty h-full">
                 <p className="text-sm font-semibold text-slate-700">Série analítica indisponível</p>
@@ -133,6 +135,7 @@ export function TransactionAnalyticsPanel({ scope, dateRange, data }: Transactio
           </div>
           <div className="chart-panel px-4 py-5 sm:px-6">
             {ranking.length > 0 ? (
+              <div className="h-[280px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={ranking} layout="vertical" margin={{ top: 8, right: 10, left: 15, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" />
@@ -149,6 +152,7 @@ export function TransactionAnalyticsPanel({ scope, dateRange, data }: Transactio
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
+              </div>
             ) : (
               <div className="premium-empty h-full">
                 <p className="text-sm font-semibold text-slate-700">Ranking indisponível</p>
