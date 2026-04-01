@@ -4,6 +4,7 @@ import { TransactionFilters } from "@/components/transactions/TransactionFilters
 import { TransactionAnalyticsPanel } from "@/components/analytics/TransactionAnalyticsPanel";
 import { MetricsSummaryCards } from "@/components/metrics/MetricsSummaryCards";
 import { Badge } from "@/components/ui/badge";
+import { PageHero } from "@/components/ui/PageHero";
 import { parseDateRangeFromSearchParams } from "@/lib/dateRange";
 import { getMetricsSummaryWithComparison } from "@/lib/analytics/metricsSummary";
 import { getTransactionAnalyticsBundle } from "@/lib/analytics/transaction-metrics";
@@ -166,37 +167,41 @@ export default async function ReceitasPage({ searchParams }: { searchParams: Sea
   const dateRange = parseDateRangeFromSearchParams(searchParams);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground">Receitas</h2>
+    <div className="page-shell">
+      <PageHero
+        eyebrow="Ledger Financeiro"
+        title="Receitas"
+        description="A linguagem visual passa a tratar a aba Receita como um bloco principal do sistema, com leitura mais editorial, contraste mais forte e contexto claro de período."
+        accent="green"
+        meta={
+          <>
+            <span className="page-hero-chip">Aba principal • Receita</span>
             <Badge variant="success" size="lg">{meta.total}</Badge>
-          </div>
-          <p className="text-muted-foreground text-sm mt-1">
-            Controle suas entradas e previsÃµes de faturamento
-          </p>
-        </div>
-      </div>
+            <span className="page-hero-chip">Entradas financeiras</span>
+          </>
+        }
+      />
 
-      <Suspense fallback={<div className="h-[100px] bg-muted/20 rounded-xl animate-pulse" />}>
+      <Suspense fallback={<div className="h-[120px] rounded-[24px] bg-muted/20 animate-pulse" />}>
         <ReceitasMetricsSection dateRange={dateRange} />
       </Suspense>
 
-      <Suspense fallback={<div className="h-[300px] bg-muted/20 rounded-xl animate-pulse" />}>
+      <Suspense fallback={<div className="h-[340px] rounded-[24px] bg-muted/20 animate-pulse" />}>
         <ReceitasAnalyticsSection dateRange={dateRange} />
       </Suspense>
 
-      <Suspense fallback={<div className="h-[60px] bg-muted/20 rounded-xl animate-pulse" />}>
+      <Suspense fallback={<div className="h-[84px] rounded-[24px] bg-muted/20 animate-pulse" />}>
         <TransactionFilters />
       </Suspense>
 
-      <TransactionTable
-        data={data}
-        page={Number(meta.page)}
-        totalPages={Number(meta.totalPages)}
-        type="RECEIVABLE"
-      />
+      <div className="data-table-shell">
+        <TransactionTable
+          data={data}
+          page={Number(meta.page)}
+          totalPages={Number(meta.totalPages)}
+          type="RECEIVABLE"
+        />
+      </div>
     </div>
   );
 }

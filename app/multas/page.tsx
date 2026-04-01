@@ -1,29 +1,30 @@
 import { Suspense } from "react";
+import { AlertTriangle } from "lucide-react";
 import { MultasContent } from "@/components/multas/MultasContent";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle } from "lucide-react";
+import { PageHero } from "@/components/ui/PageHero";
 
 export default function MultasPage() {
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground">Multas</h2>
+    <div className="page-shell">
+      <PageHero
+        eyebrow="Multas Oficiais"
+        title="Multas"
+        description="O domínio oficial de infrações ganha uma presença visual própria, com foco em FineRecord, rastreabilidade e leitura mais premium do risco da frota."
+        accent="amber"
+        meta={
+          <>
             <Badge variant="warning" size="lg" className="flex items-center gap-1">
               <AlertTriangle className="w-3 h-3" />
               Infrações
             </Badge>
-          </div>
-          <p className="text-muted-foreground text-sm mt-1">
-            Gerencie multas de trânsito e infrações por veículo
-          </p>
-        </div>
-      </div>
-      
-      {/* Content */}
-      <Suspense fallback={<div className="h-[400px] bg-muted/20 rounded-xl animate-pulse" />}>
+            <span className="page-hero-chip">FineRecord oficial</span>
+            <span className="page-hero-chip">Sem confundir com custo operacional</span>
+          </>
+        }
+      />
+
+      <Suspense fallback={<div className="h-[420px] rounded-[24px] bg-muted/20 animate-pulse" />}>
         <MultasContent />
       </Suspense>
     </div>

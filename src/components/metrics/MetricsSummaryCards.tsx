@@ -1,6 +1,7 @@
 'use client';
 
-import { AlertTriangle, TrendingUp, TrendingDown, Clock, Info } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { AlertTriangle, Clock, Info, TrendingDown, TrendingUp } from 'lucide-react';
 import type { MetricsSummaryWithComparison } from '@/lib/analytics/metricsSummary';
 
 interface MetricsCardsProps {
@@ -16,14 +17,13 @@ function formatCurrencyFull(value: number): string {
 }
 
 function formatDeltaPct(value: number | null | undefined): string {
-  if (value === null || value === undefined) return 'â€”';
+  if (value === null || value === undefined) return '-';
   const sign = value > 0 ? '+' : '';
   return `${sign}${value.toFixed(1)}%`;
 }
 
 export function MetricsSummaryCards({ scope, data }: MetricsCardsProps) {
   const isIncome = scope === 'income';
-
   const incomeMetrics = data.current.income;
   const expenseMetrics = data.current.expense;
   const delta = data.delta;
@@ -37,76 +37,58 @@ export function MetricsSummaryCards({ scope, data }: MetricsCardsProps) {
   const realizedDeltaPct = isIncome ? delta.receivedDeltaPct : delta.paidDeltaPct;
   const pendingDeltaPct = isIncome ? delta.receivableDeltaPct : delta.payableDeltaPct;
 
-  const realizedLabel = isIncome ? 'Recebido no PerÃ­odo' : 'Pago no PerÃ­odo';
-  const pendingLabel = isIncome ? 'A Receber no PerÃ­odo' : 'A Pagar no PerÃ­odo';
-  const realizedTooltip = isIncome
-    ? 'Valor recebido (por data de recebimento)'
-    : 'Valor pago (por data de pagamento)';
-  const pendingTooltip = isIncome
-    ? 'Pendente de recebimento (por vencimento)'
-    : 'Pendente de pagamento (por vencimento)';
-
-  const primaryColorClass = isIncome ? 'text-emerald-600' : 'text-red-600';
-  const bgColorClass = isIncome ? 'bg-emerald-500/10' : 'bg-red-500/10';
+  const realizedLabel = isIncome ? 'Recebido no período' : 'Pago no período';
+  const pendingLabel = isIncome ? 'A receber no período' : 'A pagar no período';
+  const primaryColorClass = isIncome ? 'text-emerald-700' : 'text-red-700';
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="kpi-auto-grid">
         <MetricCard
           title={realizedLabel}
           value={formatCurrencyFull(realized)}
-          tooltip={realizedTooltip}
+          tooltip={isIncome ? 'Valor recebido por data de recebimento.' : 'Valor pago por data de pagamento.'}
           deltaPct={realizedDeltaPct}
           deltaPositiveIsGood={isIncome}
-          icon={isIncome ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
-          iconBg={bgColorClass}
-          iconColor={primaryColorClass}
-          valueColor={primaryColorClass}
+          icon={isIncome ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
+          iconTone={isIncome ? 'emerald' : 'red'}
+          valueClass={primaryColorClass}
         />
 
         <MetricCard
           title={pendingLabel}
           value={formatCurrencyFull(pending)}
-          tooltip={pendingTooltip}
+          tooltip={isIncome ? 'Pendente de recebimento por vencimento.' : 'Pendente de pagamento por vencimento.'}
           deltaPct={pendingDeltaPct}
-          icon={<Clock className="w-5 h-5" />}
-          iconBg="bg-amber-500/10"
-          iconColor="text-amber-600"
+          icon={<Clock className="h-5 w-5" />}
+          iconTone="amber"
         />
 
         <MetricCard
           title="Vencidos"
           value={formatCurrencyFull(overdue)}
-          tooltip="Pendentes com vencimento anterior a hoje"
+          tooltip="Pendentes com vencimento anterior a hoje."
           count={overdueCount}
-          icon={<AlertTriangle className="w-5 h-5" />}
-          iconBg={overdue > 0 ? 'bg-red-500/10' : 'bg-muted'}
-          iconColor={overdue > 0 ? 'text-red-600' : 'text-muted-foreground'}
-          valueColor={overdue > 0 ? 'text-red-600' : ''}
+          icon={<AlertTriangle className="h-5 w-5" />}
+          iconTone={overdue > 0 ? 'red' : 'slate'}
+          valueClass={overdue > 0 ? 'text-red-700' : ''}
         />
 
         <MetricCard
-          title="Total Previsto"
+          title="Total previsto"
           value={formatCurrencyFull(totalPlanned)}
           tooltip={`${realizedLabel} + ${pendingLabel}`}
-          icon={<span className="text-lg font-bold">Î£</span>}
-          iconBg="bg-[#022D44]/10"
-          iconColor="text-[#022D44]"
+          icon={<span className="text-lg font-bold">S</span>}
+          iconTone="blue"
         />
       </div>
 
-      <div className="text-xs text-muted-foreground flex items-center gap-4 px-1">
-        <span>
-          {isIncome ? 'Recebido' : 'Pago'}: {formatCurrencyFull(realized)}
-        </span>
-        <span>+</span>
-        <span>
-          {isIncome ? 'A Receber' : 'A Pagar'}: {formatCurrencyFull(pending)}
-        </span>
-        <span>=</span>
-        <span className="font-medium">
-          Total: {formatCurrencyFull(totalPlanned)}
-        </span>
+      <div className="glass-panel flex flex-wrap items-center gap-3 px-4 py-3 text-xs text-slate-700">
+        <span>{isIncome ? 'Recebido' : 'Pago'}: <strong>{formatCurrencyFull(realized)}</strong></span>
+        <span className="text-slate-300">+</span>
+        <span>{isIncome ? 'A receber' : 'A pagar'}: <strong>{formatCurrencyFull(pending)}</strong></span>
+        <span className="text-slate-300">=</span>
+        <span>Total: <strong>{formatCurrencyFull(totalPlanned)}</strong></span>
       </div>
     </div>
   );
@@ -120,9 +102,8 @@ function MetricCard({
   deltaPositiveIsGood = true,
   count,
   icon,
-  iconBg = 'bg-muted',
-  iconColor = 'text-foreground',
-  valueColor = '',
+  iconTone = 'slate',
+  valueClass = '',
 }: {
   title: string;
   value: string;
@@ -130,47 +111,45 @@ function MetricCard({
   deltaPct?: number | null;
   deltaPositiveIsGood?: boolean;
   count?: number;
-  icon?: React.ReactNode;
-  iconBg?: string;
-  iconColor?: string;
-  valueColor?: string;
+  icon?: ReactNode;
+  iconTone?: 'emerald' | 'red' | 'amber' | 'blue' | 'slate';
+  valueClass?: string;
 }) {
-  const getDeltaColor = () => {
-    if (deltaPct === null || deltaPct === undefined) return 'text-muted-foreground';
-    if (deltaPositiveIsGood) {
-      return deltaPct >= 0 ? 'text-emerald-600' : 'text-red-600';
-    }
-    return deltaPct >= 0 ? 'text-red-600' : 'text-emerald-600';
-  };
+  const toneClass = {
+    emerald: 'bg-emerald-500/12 text-emerald-700',
+    red: 'bg-red-500/12 text-red-700',
+    amber: 'bg-amber-500/12 text-amber-700',
+    blue: 'bg-[#022D44]/10 text-[#022D44]',
+    slate: 'bg-slate-200/70 text-slate-600',
+  }[iconTone];
+
+  const deltaColor =
+    deltaPct === null || deltaPct === undefined
+      ? 'text-slate-400'
+      : deltaPositiveIsGood
+        ? deltaPct >= 0 ? 'text-emerald-600' : 'text-red-600'
+        : deltaPct >= 0 ? 'text-red-600' : 'text-emerald-600';
 
   return (
-    <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-4 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between">
-        <div className="flex-1 min-w-0">
+    <div className="card-premium bg-gradient-to-br from-white via-white to-slate-50/80 p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <p className="text-sm font-medium text-muted-foreground truncate">{title}</p>
-            {tooltip && (
-              <div className="group relative flex-shrink-0">
-                <Info className="w-3.5 h-3.5 text-muted-foreground/60 cursor-help" />
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-popover border rounded-md text-xs text-popover-foreground whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-lg">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">{title}</p>
+            {tooltip ? (
+              <div className="group/tip relative">
+                <Info className="h-3.5 w-3.5 cursor-help text-slate-300" />
+                <div className="invisible absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 opacity-0 shadow-xl transition-all group-hover/tip:visible group-hover/tip:opacity-100">
                   {tooltip}
                 </div>
               </div>
-            )}
+            ) : null}
           </div>
-          <p className={`text-xl font-bold mt-1 ${valueColor}`}>{value}</p>
-          {deltaPct !== undefined && (
-            <p className={`text-xs mt-0.5 ${getDeltaColor()}`}>
-              {formatDeltaPct(deltaPct)} vs anterior
-            </p>
-          )}
-          {count !== undefined && count > 0 && (
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {count} {count === 1 ? 'item' : 'itens'}
-            </p>
-          )}
+          <p className={`metric-value-fluid mt-3 text-slate-900 ${valueClass}`}>{value}</p>
+          {deltaPct !== undefined ? <p className={`mt-2 text-xs font-medium ${deltaColor}`}>{formatDeltaPct(deltaPct)} vs anterior</p> : null}
+          {count !== undefined && count > 0 ? <p className="mt-1 text-xs text-slate-500">{count} {count === 1 ? 'item' : 'itens'}</p> : null}
         </div>
-        <div className={`p-2 rounded-lg ${iconBg} ${iconColor} flex-shrink-0`}>
+        <div className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${toneClass}`}>
           {icon}
         </div>
       </div>

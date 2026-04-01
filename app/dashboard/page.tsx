@@ -177,7 +177,10 @@ export default function DashboardPage({ searchParams }: DashboardPageProps) {
 function DashboardLoading() {
   return (
     <div className="space-y-6">
-      <h2 className="text-3xl font-bold tracking-tight">VisÃ£o Geral</h2>
+      <div className="flex items-center gap-3">
+        <div className="w-1 h-7 rounded-full bg-[#022D44]" />
+        <h2 className="text-xl font-bold tracking-tight">Visão Geral</h2>
+      </div>
       <div className="flex items-center justify-center h-[400px]">
         <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
       </div>

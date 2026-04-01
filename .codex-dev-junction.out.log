@@ -1,0 +1,16 @@
+
+> anderson-wealth-planner@0.1.0 dev
+> next dev --hostname 127.0.0.1 --port 3002
+
+  ▲ Next.js 14.2.35
+  - Local:        http://127.0.0.1:3002
+  - Network:      http://127.0.0.1:3002
+  - Environments: .env.local, .env
+
+ ✓ Starting...
+ ✓ Ready in 4.8s
+ ○ Compiling /dashboard ...
+ ✓ Compiled /dashboard in 14.6s (2170 modules)
+ GET /dashboard 200 in 15149ms
+ HEAD /dashboard 200 in 15175ms
+ HEAD /dashboard 200 in 40ms

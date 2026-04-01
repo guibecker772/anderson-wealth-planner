@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getTransactionStatusInfo } from "@/lib/i18n/statusLabels";
-import { FileX, Sparkles, Pencil } from "lucide-react";
+import { FileX, Pencil, Sparkles } from "lucide-react";
 
 interface Transaction {
   id: string;
@@ -40,53 +40,73 @@ export function TransactionTable({ data, page, totalPages, type }: TransactionTa
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border bg-card overflow-hidden">
+      <div className="card-premium overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="bg-muted/50 hover:bg-muted/50">
-              <TableHead className="font-semibold">Vencimento</TableHead>
-              <TableHead className="font-semibold">{type === 'PAYABLE' ? 'Fornecedor' : 'Cliente'}</TableHead>
-              <TableHead className="font-semibold">Categoria</TableHead>
-              <TableHead className="font-semibold text-right">Valor Previsto</TableHead>
-              <TableHead className="font-semibold text-right">Valor Real</TableHead>
-              <TableHead className="font-semibold">Status</TableHead>
+            <TableRow className="bg-slate-50/80 hover:bg-slate-50/80">
+              <TableHead className="whitespace-nowrap py-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                Vencimento
+              </TableHead>
+              <TableHead className="py-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                {type === 'PAYABLE' ? 'Fornecedor' : 'Cliente'}
+              </TableHead>
+              <TableHead className="py-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                Categoria
+              </TableHead>
+              <TableHead className="whitespace-nowrap py-4 text-right text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                Valor Previsto
+              </TableHead>
+              <TableHead className="whitespace-nowrap py-4 text-right text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                Valor Real
+              </TableHead>
+              <TableHead className="py-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                Status
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {data.map((tx) => {
               const statusInfo = getTransactionStatusInfo(tx.status);
-              
+
               return (
-                <TableRow key={tx.id} className="hover:bg-muted/30 transition-colors">
-                  <TableCell className="font-medium">{formatDate(tx.dueDate)}</TableCell>
-                  <TableCell>{tx.counterparty || <span className="text-muted-foreground">—</span>}</TableCell>
-                  <TableCell>
+                <TableRow key={tx.id} className="transition-colors hover:bg-slate-50/70">
+                  <TableCell className="whitespace-nowrap py-4 text-sm font-medium text-slate-700">
+                    {formatDate(tx.dueDate)}
+                  </TableCell>
+                  <TableCell className="max-w-[220px] py-4">
+                    <span className="block truncate text-sm text-slate-800" title={tx.counterparty ?? undefined}>
+                      {tx.counterparty || '—'}
+                    </span>
+                  </TableCell>
+                  <TableCell className="max-w-[240px] py-4">
                     {tx.category ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-secondary text-secondary-foreground text-xs">
-                        {tx.category}
+                      <span className="inline-flex max-w-full items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-700">
+                        <span className="truncate" title={tx.category}>
+                          {tx.category}
+                        </span>
                         {tx.categorySource === 'NORMALIZED' && (
                           <span title="Categoria normalizada automaticamente">
-                            <Sparkles className="w-3 h-3 text-emerald-500" />
+                            <Sparkles className="h-3 w-3 text-emerald-500" />
                           </span>
                         )}
                         {tx.categorySource === 'MANUAL' && (
                           <span title="Categoria definida manualmente">
-                            <Pencil className="w-3 h-3 text-blue-500" />
+                            <Pencil className="h-3 w-3 text-blue-500" />
                           </span>
                         )}
                       </span>
                     ) : (
-                      <span className="text-muted-foreground">—</span>
+                      <span className="text-slate-400">—</span>
                     )}
                   </TableCell>
-                  <TableCell className="text-right font-mono">
+                  <TableCell className="table-number py-4 text-right font-medium text-slate-900">
                     {formatCurrency(Number(tx.plannedAmount))}
                   </TableCell>
-                  <TableCell className="text-right font-mono">
-                    {tx.actualAmount ? formatCurrency(Number(tx.actualAmount)) : <span className="text-muted-foreground">—</span>}
+                  <TableCell className="table-number py-4 text-right font-medium text-slate-900">
+                    {tx.actualAmount ? formatCurrency(Number(tx.actualAmount)) : <span className="text-slate-400">—</span>}
                   </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
+                  <TableCell className="py-4">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Badge variant={statusInfo.variant as BadgeProps['variant']}>
                         {statusInfo.label}
                       </Badge>
@@ -104,11 +124,11 @@ export function TransactionTable({ data, page, totalPages, type }: TransactionTa
               <TableRow>
                 <TableCell colSpan={6} className="h-32">
                   <div className="flex flex-col items-center justify-center text-center">
-                    <FileX className="w-10 h-10 text-muted-foreground/40 mb-3" />
-                    <p className="text-sm font-medium text-muted-foreground">
+                    <FileX className="mb-4 h-12 w-12 text-muted-foreground/30" />
+                    <p className="text-sm font-semibold text-muted-foreground">
                       Nenhum lançamento encontrado
                     </p>
-                    <p className="text-xs text-muted-foreground/70 mt-1">
+                    <p className="mt-1 text-xs text-muted-foreground/70">
                       Tente ajustar os filtros ou o período selecionado
                     </p>
                   </div>
@@ -118,26 +138,25 @@ export function TransactionTable({ data, page, totalPages, type }: TransactionTa
           </TableBody>
         </Table>
       </div>
-      
-      {/* Pagination */}
+
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
             Página {page} de {totalPages}
           </p>
           <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => handlePageChange(page - 1)} 
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(page - 1)}
               disabled={page <= 1}
             >
               Anterior
             </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => handlePageChange(page + 1)} 
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(page + 1)}
               disabled={page >= totalPages}
             >
               Próximo

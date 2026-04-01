@@ -1,0 +1,16 @@
+Error: EINVAL: invalid argument, readlink 'c:\Users\guilherme.becker\OneDrive - Liberta\Área de Trabalho\ClikFinance\anderson-wealth-planner\.next\server\interception-route-rewrite-manifest.js'
+    at async Object.readlink (node:internal/fs/promises:976:10)
+    at async c:\Users\guilherme.becker\OneDrive - Liberta\Área de Trabalho\ClikFinance\anderson-wealth-planner\node_modules\next\dist\lib\recursive-delete.js:58:30
+    at async Promise.all (index 2)
+    at async recursiveDelete (c:\Users\guilherme.becker\OneDrive - Liberta\Área de Trabalho\ClikFinance\anderson-wealth-planner\node_modules\next\dist\lib\recursive-delete.js:51:5)
+    at async c:\Users\guilherme.becker\OneDrive - Liberta\Área de Trabalho\ClikFinance\anderson-wealth-planner\node_modules\next\dist\lib\recursive-delete.js:68:17
+    at async Promise.all (index 5)
+    at async recursiveDelete (c:\Users\guilherme.becker\OneDrive - Liberta\Área de Trabalho\ClikFinance\anderson-wealth-planner\node_modules\next\dist\lib\recursive-delete.js:51:5)
+    at async Span.traceAsyncFn (c:\Users\guilherme.becker\OneDrive - Liberta\Área de Trabalho\ClikFinance\anderson-wealth-planner\node_modules\next\dist\trace\trace.js:154:20)
+    at async HotReloaderWebpack.start (c:\Users\guilherme.becker\OneDrive - Liberta\Área de Trabalho\ClikFinance\anderson-wealth-planner\node_modules\next\dist\server\dev\hot-reloader-webpack.js:612:9)
+    at async startWatcher (c:\Users\guilherme.becker\OneDrive - Liberta\Área de Trabalho\ClikFinance\anderson-wealth-planner\node_modules\next\dist\server\lib\router-utils\setup-dev-bundler.js:156:5) {
+  errno: -4071,
+  code: 'EINVAL',
+  syscall: 'readlink',
+  path: 'c:\\Users\\guilherme.becker\\OneDrive - Liberta\\Área de Trabalho\\ClikFinance\\anderson-wealth-planner\\.next\\server\\interception-route-rewrite-manifest.js'
+}

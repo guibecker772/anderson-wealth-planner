@@ -13,11 +13,10 @@ import { cn } from "@/lib/utils"
  * - neutral: Cancelado, Desconhecido
  */
 const badgeVariants = cva(
-  "inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold tracking-[0.08em] uppercase transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 shadow-sm backdrop-blur-sm",
   {
     variants: {
       variant: {
-        // Semantic variants
         default:
           "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
         secondary:
@@ -27,26 +26,24 @@ const badgeVariants = cva(
         outline: 
           "text-foreground border-border",
         
-        // Status-specific variants (ClikFinance palette)
         success: 
-          "border-transparent bg-emerald-500/15 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400",
+          "border-emerald-200/70 bg-emerald-50 text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-400",
         warning: 
-          "border-transparent bg-amber-500/15 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400",
+          "border-amber-200/70 bg-amber-50 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-400",
         error: 
-          "border-transparent bg-red-500/15 text-red-700 dark:bg-red-500/20 dark:text-red-400",
+          "border-red-200/70 bg-red-50 text-red-800 dark:border-red-500/30 dark:bg-red-500/15 dark:text-red-400",
         info: 
-          "border-transparent bg-sky-500/15 text-sky-700 dark:bg-sky-500/20 dark:text-sky-400",
+          "border-sky-200/70 bg-sky-50 text-sky-800 dark:border-sky-500/30 dark:bg-sky-500/15 dark:text-sky-400",
         neutral: 
-          "border-transparent bg-gray-500/15 text-gray-600 dark:bg-gray-500/20 dark:text-gray-400",
+          "border-gray-200/70 bg-gray-50 text-gray-700 dark:border-gray-500/30 dark:bg-gray-500/15 dark:text-gray-400",
         
-        // ClikFinance accent
         accent:
-          "border-transparent bg-[#A8CF4C]/15 text-[#5a7a1a] dark:bg-[#A8CF4C]/20 dark:text-[#A8CF4C]",
+          "border-[#A8CF4C]/30 bg-[#A8CF4C]/12 text-[#425d14] dark:border-[#A8CF4C]/30 dark:bg-[#A8CF4C]/15 dark:text-[#A8CF4C]",
       },
       size: {
-        default: "px-2.5 py-0.5 text-xs",
+        default: "px-2.5 py-0.5 text-[11px]",
         sm: "px-2 py-0.5 text-[10px]",
-        lg: "px-3 py-1 text-sm",
+        lg: "px-3 py-1 text-xs",
       },
     },
     defaultVariants: {

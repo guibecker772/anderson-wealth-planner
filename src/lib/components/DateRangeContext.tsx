@@ -38,27 +38,30 @@ export function DateRangeProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Initialize from URL params, then localStorage, then default
+  // Initialize from URL params or default — never localStorage here
+  // (localStorage reads differ between SSR and hydration, causing mismatch)
   const [dateRange, setDateRangeState] = useState<DateRangeStrings>(() => {
     const fromParam = searchParams.get('from');
     const toParam = searchParams.get('to');
     if (fromParam && toParam) return { from: fromParam, to: toParam };
-    const stored = loadFromStorage();
-    if (stored) return stored;
     return getDefaultDateRange();
   });
 
-  // On mount, if URL has no date params but we have stored ones → push to URL
+  // On mount / route change: if URL lacks date params, restore from localStorage or use default
   useEffect(() => {
     const fromParam = searchParams.get('from');
     const toParam = searchParams.get('to');
     if (!fromParam || !toParam) {
+      const stored = loadFromStorage();
+      const range = stored ?? getDefaultDateRange();
+
+      setDateRangeState(range);
+
       const params = new URLSearchParams(searchParams.toString());
-      params.set('from', dateRange.from);
-      params.set('to', dateRange.to);
+      params.set('from', range.from);
+      params.set('to', range.to);
       router.replace(`${pathname}?${params.toString()}`);
     }
-  // Only run on first mount / route change
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 

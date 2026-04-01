@@ -1,24 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import {
-  ArrowLeft,
-  AlertTriangle,
-  Car,
-  Landmark,
-  TrendingUp,
-  TrendingDown,
-  Wrench,
-} from 'lucide-react';
+import type { ReactNode } from 'react';
+import { AlertTriangle, ArrowLeft, Car, Landmark, TrendingDown, TrendingUp, Wrench } from 'lucide-react';
 import { DateRangeBadge } from '@/components/ui/DateRangePicker';
 import { Badge } from '@/components/ui/badge';
 import type { InvestorMetrics } from '@/lib/analytics/investor-metrics';
 
 function formatCurrencyFull(value: number): string {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(value);
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 }
 
 interface InvestorDetailContentProps {
@@ -30,13 +20,10 @@ interface InvestorDetailContentProps {
 export function InvestorDetailContent({ data, dateRange, error }: InvestorDetailContentProps) {
   if (error || !data) {
     return (
-      <div className="flex flex-col items-center justify-center h-[400px] text-destructive">
-        <AlertTriangle className="w-8 h-8 mb-3" />
+      <div className="premium-empty h-[400px]">
+        <AlertTriangle className="h-8 w-8 text-destructive" />
         <p>{error || 'Investidor nao encontrado'}</p>
-        <Link
-          href={`/investidores?from=${dateRange.from}&to=${dateRange.to}`}
-          className="mt-4 text-sm text-muted-foreground hover:text-foreground"
-        >
+        <Link href={`/investidores?from=${dateRange.from}&to=${dateRange.to}`} className="text-sm font-medium text-[#022D44] underline underline-offset-4">
           Voltar para lista
         </Link>
       </div>
@@ -48,254 +35,191 @@ export function InvestorDetailContent({ data, dateRange, error }: InvestorDetail
   const isPositiveExpanded = totals.expandedResult >= 0;
 
   return (
-    <div className="space-y-6">
-      <Link
-        href={`/investidores?from=${dateRange.from}&to=${dateRange.to}`}
-        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Voltar para lista
-      </Link>
-
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-foreground">
-            {investor.name}
-          </h2>
-          <p className="text-muted-foreground text-sm mt-1">
-            {investor.vehicles.length} veiculo(s) vinculado(s)
-          </p>
-        </div>
+    <div className="page-shell">
+      <div className="flex items-center justify-between">
+        <Link href={`/investidores?from=${dateRange.from}&to=${dateRange.to}`} className="inline-flex items-center gap-2 rounded-full border border-white/80 bg-white/85 px-4 py-2 text-sm text-slate-600 shadow-sm hover:text-slate-900">
+          <ArrowLeft className="h-4 w-4" />
+          Voltar para lista
+        </Link>
         <DateRangeBadge from={dateRange.from} to={dateRange.to} />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
-        <KPICard
-          title="Receita Operacional"
-          value={formatCurrencyFull(totals.operationalRevenue)}
-          icon={<TrendingUp className="w-5 h-5" />}
-          iconBg="bg-emerald-500/10"
-          iconColor="text-emerald-600"
-          valueColor="text-emerald-600"
-        />
-        <KPICard
-          title="Custo Operacional"
-          value={formatCurrencyFull(totals.operationalCost)}
-          icon={<Wrench className="w-5 h-5" />}
-          iconBg="bg-blue-500/10"
-          iconColor="text-blue-600"
-          valueColor="text-blue-600"
-          subtext={`Multas op.: ${formatCurrencyFull(totals.operationalFines)} • Desc.: ${formatCurrencyFull(totals.operationalDiscount)}`}
-        />
-        <KPICard
-          title="Resultado Operacional"
-          value={formatCurrencyFull(totals.operationalResult)}
-          icon={isPositiveOperational ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
-          iconBg={isPositiveOperational ? "bg-emerald-500/10" : "bg-red-500/10"}
-          iconColor={isPositiveOperational ? "text-emerald-600" : "text-red-600"}
-          valueColor={isPositiveOperational ? "text-emerald-600" : "text-red-600"}
-        />
-        <KPICard
-          title="Entrada Financeira"
-          value={formatCurrencyFull(totals.identifiedFinancialInflow)}
-          icon={<Landmark className="w-5 h-5" />}
-          iconBg="bg-emerald-500/10"
-          iconColor="text-emerald-600"
-          valueColor="text-emerald-600"
-        />
-        <KPICard
-          title="Saída Financeira"
-          value={formatCurrencyFull(totals.identifiedFinancialOutflow)}
-          icon={<Landmark className="w-5 h-5" />}
-          iconBg="bg-amber-500/10"
-          iconColor="text-amber-600"
-          valueColor="text-amber-600"
-          subtext={`${allocationSummary.linkedEntryCount} vínculo(s) auditáveis`}
-        />
-        <KPICard
-          title="Resultado Expandido"
-          value={formatCurrencyFull(totals.expandedResult)}
-          icon={isPositiveExpanded ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
-          iconBg={isPositiveExpanded ? "bg-emerald-500/10" : "bg-red-500/10"}
-          iconColor={isPositiveExpanded ? "text-emerald-600" : "text-red-600"}
-          valueColor={isPositiveExpanded ? "text-emerald-600" : "text-red-600"}
-          subtext="Operacional + financeiro identificado"
-        />
+      <div className="editorial-panel px-7 py-7">
+        <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-white/72">Ficha do investidor</p>
+            <h1 className="mt-3 text-4xl font-semibold tracking-[-0.04em] text-white">{investor.name}</h1>
+            <p className="mt-2 text-sm text-white/82">{investor.vehicles.length} veiculo(s) vinculado(s) na carteira operacional.</p>
+          </div>
+          <div className="glass-panel p-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-500">Cobertura de vinculacao</p>
+            <p className="mt-2 text-sm leading-7 text-slate-600">{allocationSummary.linkageCoverageNote}</p>
+          </div>
+        </div>
       </div>
 
-      <div className="border rounded-xl bg-card shadow-sm overflow-hidden">
-        <div className="p-4 border-b">
-          <div className="flex items-center gap-2">
-            <Car className="w-5 h-5 text-muted-foreground" />
-            <h3 className="font-semibold text-foreground">Detalhamento Operacional por Veiculo</h3>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <SummaryCard title="Receita operacional" value={formatCurrencyFull(totals.operationalRevenue)} tone="emerald" icon={<TrendingUp className="h-5 w-5" />} />
+        <SummaryCard title="Custo operacional" value={formatCurrencyFull(totals.operationalCost)} tone="blue" icon={<Wrench className="h-5 w-5" />} subtext={`Multas op.: ${formatCurrencyFull(totals.operationalFines)} | Desc.: ${formatCurrencyFull(totals.operationalDiscount)}`} />
+        <SummaryCard title="Resultado operacional" value={formatCurrencyFull(totals.operationalResult)} tone={isPositiveOperational ? 'emerald' : 'red'} icon={isPositiveOperational ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />} />
+        <SummaryCard title="Entrada financeira" value={formatCurrencyFull(totals.identifiedFinancialInflow)} tone="emerald" icon={<Landmark className="h-5 w-5" />} />
+        <SummaryCard title="Saida financeira" value={formatCurrencyFull(totals.identifiedFinancialOutflow)} tone="amber" icon={<Landmark className="h-5 w-5" />} subtext={`${allocationSummary.linkedEntryCount} vinculo(s) auditaveis`} />
+        <SummaryCard title="Resultado expandido" value={formatCurrencyFull(totals.expandedResult)} tone={isPositiveExpanded ? 'emerald' : 'red'} icon={isPositiveExpanded ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />} subtext="Operacional + financeiro identificado" />
+      </div>
+
+      <div className="data-table-shell">
+        <div className="flex items-center gap-3 border-b border-slate-200/70 px-6 py-5">
+          <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[#022D44]/10 text-[#022D44]">
+            <Car className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold tracking-[-0.02em] text-slate-900">Detalhamento operacional por veiculo</h2>
+            <p className="mt-1 text-sm text-slate-500">Recebido, custos, multas e resultado individual da frota do investidor.</p>
           </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-muted/50">
+            <thead className="bg-slate-50/80">
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Placa</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Situacao</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground">Recebido</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground">Custos</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground">Multas</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground">Resultado</th>
+                <th className="px-6 py-4 text-left font-semibold text-slate-500">Placa</th>
+                <th className="px-6 py-4 text-left font-semibold text-slate-500">Situacao</th>
+                <th className="px-6 py-4 text-right font-semibold text-slate-500">Recebido</th>
+                <th className="px-6 py-4 text-right font-semibold text-slate-500">Custos</th>
+                <th className="px-6 py-4 text-right font-semibold text-slate-500">Multas</th>
+                <th className="px-6 py-4 text-right font-semibold text-slate-500">Resultado</th>
               </tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody>
               {vehicles.map((vehicle) => {
-                const isPositive = vehicle.netResult >= 0;
                 const warningCount = vehicle.qualitySummary.WARNING + vehicle.qualitySummary.REVIEW_REQUIRED;
                 return (
-                  <tr key={vehicle.plate} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="font-mono font-medium">{vehicle.plate}</span>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary" size="sm">
-                          {vehicle.status}
-                        </Badge>
-                        {warningCount > 0 && (
-                          <Badge variant="warning" size="sm">
-                            {warningCount} alerta(s)
-                          </Badge>
-                        )}
+                  <tr key={vehicle.plate} className="border-t border-slate-200/70">
+                    <td className="px-6 py-4 font-mono font-medium text-slate-900">{vehicle.plate}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="secondary" size="sm">{vehicle.status}</Badge>
+                        {warningCount > 0 ? <Badge variant="warning" size="sm">{warningCount} alerta(s)</Badge> : null}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-right whitespace-nowrap text-emerald-600">
-                      {formatCurrencyFull(vehicle.rentalIncome)}
-                    </td>
-                    <td className="px-4 py-3 text-right whitespace-nowrap text-blue-600">
-                      {formatCurrencyFull(vehicle.maintenanceCost)}
-                    </td>
-                    <td className="px-4 py-3 text-right whitespace-nowrap text-amber-600">
-                      {formatCurrencyFull(vehicle.finesCost)}
-                    </td>
-                    <td className={`px-4 py-3 text-right whitespace-nowrap font-medium ${isPositive ? 'text-emerald-600' : 'text-red-600'}`}>
-                      {formatCurrencyFull(vehicle.netResult)}
-                    </td>
+                    <td className="px-6 py-4 text-right text-emerald-700">{formatCurrencyFull(vehicle.rentalIncome)}</td>
+                    <td className="px-6 py-4 text-right text-sky-700">{formatCurrencyFull(vehicle.maintenanceCost)}</td>
+                    <td className="px-6 py-4 text-right text-amber-700">{formatCurrencyFull(vehicle.finesCost)}</td>
+                    <td className={`px-6 py-4 text-right font-medium ${vehicle.netResult >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>{formatCurrencyFull(vehicle.netResult)}</td>
                   </tr>
                 );
               })}
-              {vehicles.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                    Nenhum veiculo encontrado para este investidor
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
       </div>
 
-      <div className="border rounded-xl bg-card shadow-sm overflow-hidden">
-        <div className="p-4 border-b">
-          <div className="flex items-center gap-2">
-            <Landmark className="w-5 h-5 text-muted-foreground" />
-            <h3 className="font-semibold text-foreground">Vínculos Financeiros Identificados</h3>
+      <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+        <div className="data-table-shell">
+          <div className="flex items-center gap-3 border-b border-slate-200/70 px-6 py-5">
+            <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-700">
+              <Landmark className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold tracking-[-0.02em] text-slate-900">Vinculos financeiros identificados</h2>
+              <p className="mt-1 text-sm text-slate-500">Somente lancamentos com nome explicito do investidor em contexto financeiro entram aqui.</p>
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            Apenas lançamentos com nome explícito do investidor em contexto financeiro entram aqui.
-          </p>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/50">
-              <tr>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Data</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Grupo</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Detalhe</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Regra</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground">Valor</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {financialLinks.map((link) => (
-                <tr key={link.id} className="hover:bg-muted/30 transition-colors">
-                  <td className="px-4 py-3 whitespace-nowrap">{link.entryDate}</td>
-                  <td className="px-4 py-3">
-                    <div className="space-y-0.5">
-                      <div>{link.groupRaw || '-'}</div>
-                      <div className="text-xs text-muted-foreground">{link.categoryRaw || link.accountRaw || '-'}</div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 max-w-[280px]">
-                    <div className="space-y-0.5">
-                      <div className="truncate">{link.detailRaw || '-'}</div>
-                      <div className="text-xs text-muted-foreground truncate">
-                        {link.sourceSheetName} • linha {link.sourceRowNumber}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 max-w-[260px]">
-                    <div className="space-y-0.5">
-                      <div>{link.ruleLabel}</div>
-                      <div className="text-xs text-muted-foreground truncate">{link.rationale}</div>
-                    </div>
-                  </td>
-                  <td className={`px-4 py-3 text-right whitespace-nowrap font-medium ${link.direction === 'OUTFLOW' ? 'text-amber-600' : 'text-emerald-600'}`}>
-                    {formatCurrencyFull(link.amount)}
-                  </td>
-                </tr>
-              ))}
-              {financialLinks.length === 0 && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50/80">
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
-                    Nenhum lançamento financeiro com vínculo confiável foi identificado para este investidor
-                  </td>
+                  <th className="px-6 py-4 text-left font-semibold text-slate-500">Data</th>
+                  <th className="px-6 py-4 text-left font-semibold text-slate-500">Grupo</th>
+                  <th className="px-6 py-4 text-left font-semibold text-slate-500">Detalhe</th>
+                  <th className="px-6 py-4 text-left font-semibold text-slate-500">Regra</th>
+                  <th className="px-6 py-4 text-right font-semibold text-slate-500">Valor</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {financialLinks.map((link) => (
+                  <tr key={link.id} className="border-t border-slate-200/70">
+                    <td className="px-6 py-4">{link.entryDate}</td>
+                    <td className="px-6 py-4">
+                      <div>{link.groupRaw || '-'}</div>
+                      <div className="text-xs text-slate-500">{link.categoryRaw || link.accountRaw || '-'}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="truncate">{link.detailRaw || '-'}</div>
+                      <div className="text-xs text-slate-500">{link.sourceSheetName} | linha {link.sourceRowNumber}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div>{link.ruleLabel}</div>
+                      <div className="text-xs text-slate-500">{link.rationale}</div>
+                    </td>
+                    <td className={`px-6 py-4 text-right font-medium ${link.direction === 'OUTFLOW' ? 'text-amber-700' : 'text-emerald-700'}`}>
+                      {formatCurrencyFull(link.amount)}
+                    </td>
+                  </tr>
+                ))}
+                {financialLinks.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-10 text-center text-slate-500">
+                      Nenhum lancamento financeiro com vinculo confiavel foi identificado para este investidor.
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
 
-      <div className="bg-muted/30 rounded-xl border p-4">
-        <h4 className="font-medium text-sm mb-2">Notas</h4>
-        <ul className="text-xs text-muted-foreground space-y-1">
-          <li>Receita operacional usa `Valor Pago (Semana)` da base operacional.</li>
-          <li>Custo operacional inclui manutencao, desconto e `Multa/atraso` operacional.</li>
-          <li>Financeiro identificado só considera vínculo forte e auditável por nome explícito do investidor.</li>
-          <li>Não entram no resultado individual: impostos, juros, despesa fixa, não identificado, repasses ambíguos e multas oficiais sem `Quem Pagou`.</li>
-          <li>{allocationSummary.linkageCoverageNote}</li>
-        </ul>
+        <div className="module-surface module-surface-financial">
+          <div className="section-heading">
+            <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/14 bg-white/10 text-white">
+              <Landmark className="h-5 w-5" />
+            </div>
+            <div>
+              <h2>Notas de leitura</h2>
+              <p>O resultado individual nao tenta fingir completude onde ainda nao existe vinculacao confiavel.</p>
+            </div>
+          </div>
+          <ul className="space-y-3 text-sm leading-7 text-white/82">
+            <li>Receita operacional usa Valor Pago (Semana) da base operacional.</li>
+            <li>Custo operacional inclui manutencao, desconto e multa/atraso operacional.</li>
+            <li>Financeiro identificado so considera vinculo forte e auditavel por nome explicito do investidor.</li>
+            <li>Impostos, juros, despesa fixa, nao identificado, repasses ambiguos e multas oficiais sem Quem Pagou seguem fora do resultado individual.</li>
+            <li className="text-white/70">{allocationSummary.linkageCoverageNote}</li>
+          </ul>
+        </div>
       </div>
     </div>
   );
 }
 
-function KPICard({
+function SummaryCard({
   title,
   value,
   icon,
   subtext,
-  iconBg = 'bg-muted',
-  iconColor = 'text-foreground',
-  valueColor = ''
+  tone,
 }: {
   title: string;
   value: string;
-  icon?: React.ReactNode;
+  icon: ReactNode;
   subtext?: string;
-  iconBg?: string;
-  iconColor?: string;
-  valueColor?: string;
+  tone: 'emerald' | 'red' | 'amber' | 'blue';
 }) {
+  const toneClass = {
+    emerald: 'from-emerald-500/12 to-white text-emerald-700',
+    red: 'from-red-500/12 to-white text-red-700',
+    amber: 'from-amber-500/12 to-white text-amber-700',
+    blue: 'from-sky-500/12 to-white text-sky-700',
+  }[tone];
+
   return (
-    <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-5 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <p className={`text-2xl font-bold mt-2 ${valueColor}`}>{value}</p>
-          {subtext && (
-            <p className="text-xs text-muted-foreground mt-2">
-              {subtext}
-            </p>
-          )}
+    <div className={`card-premium bg-gradient-to-br ${toneClass} p-5`}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-500">{title}</p>
+          <p className="metric-value-fluid mt-3 text-slate-900">{value}</p>
+          {subtext ? <p className="mt-2 text-xs text-slate-500">{subtext}</p> : null}
         </div>
-        <div className={`p-2.5 rounded-lg ${iconBg} ${iconColor}`}>
+        <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white/85 shadow-sm">
           {icon}
         </div>
       </div>

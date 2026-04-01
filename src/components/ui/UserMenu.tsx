@@ -67,7 +67,7 @@ export function UserMenu() {
     <div className="relative" ref={panelRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-9 h-9 rounded-lg bg-[#022D44] flex items-center justify-center text-white hover:bg-[#022D44]/80 transition-colors relative"
+        className="relative flex h-11 w-11 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#022D44,#0b5a82)] text-white shadow-[0_18px_36px_-22px_rgba(2,45,68,0.55)] transition-all hover:brightness-105"
         title="Sistema"
       >
         <User className="w-4 h-4" />
@@ -78,9 +78,9 @@ export function UserMenu() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-72 bg-popover border border-border/80 rounded-xl shadow-xl z-50 overflow-hidden animate-in">
+        <div className="absolute right-0 z-50 mt-3 w-72 overflow-hidden rounded-[24px] border border-white/80 bg-popover/95 shadow-[0_28px_70px_-36px_rgba(2,45,68,0.45)] backdrop-blur-xl animate-in">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 bg-muted/30">
+          <div className="flex items-center justify-between border-b border-border/50 bg-[linear-gradient(180deg,rgba(2,45,68,0.05),rgba(255,255,255,0.68))] px-5 py-4">
             <span className="text-sm font-semibold text-foreground">Sistema</span>
             <button
               onClick={() => setIsOpen(false)}

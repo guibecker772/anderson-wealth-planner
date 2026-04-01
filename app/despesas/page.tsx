@@ -4,6 +4,7 @@ import { TransactionFilters } from "@/components/transactions/TransactionFilters
 import { TransactionAnalyticsPanel } from "@/components/analytics/TransactionAnalyticsPanel";
 import { MetricsSummaryCards } from "@/components/metrics/MetricsSummaryCards";
 import { Badge } from "@/components/ui/badge";
+import { PageHero } from "@/components/ui/PageHero";
 import { parseDateRangeFromSearchParams } from "@/lib/dateRange";
 import { getMetricsSummaryWithComparison } from "@/lib/analytics/metricsSummary";
 import { getTransactionAnalyticsBundle } from "@/lib/analytics/transaction-metrics";
@@ -166,37 +167,41 @@ export default async function DespesasPage({ searchParams }: { searchParams: Sea
   const dateRange = parseDateRangeFromSearchParams(searchParams);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground">Despesas</h2>
-            <Badge variant="error" size="lg">{meta.total}</Badge>
-          </div>
-          <p className="text-muted-foreground text-sm mt-1">
-            Gerencie suas contas a pagar e saÃ­das de caixa
-          </p>
-        </div>
-      </div>
+    <div className="page-shell">
+      <PageHero
+        eyebrow="Ledger Financeiro"
+        title="Despesas"
+        description="Saídas financeiras com presença visual mais forte, leitura por classe e uma distinção mais nobre entre custo do ledger e contexto operacional."
+        accent="amber"
+        meta={
+          <>
+            <span className="page-hero-chip">Aba principal • Despesa</span>
+            <Badge variant="warning" size="lg">{meta.total}</Badge>
+            <span className="page-hero-chip">Saídas financeiras</span>
+          </>
+        }
+      />
 
-      <Suspense fallback={<div className="h-[100px] bg-muted/20 rounded-xl animate-pulse" />}>
+      <Suspense fallback={<div className="h-[120px] rounded-[24px] bg-muted/20 animate-pulse" />}>
         <DespesasMetricsSection dateRange={dateRange} />
       </Suspense>
 
-      <Suspense fallback={<div className="h-[300px] bg-muted/20 rounded-xl animate-pulse" />}>
+      <Suspense fallback={<div className="h-[340px] rounded-[24px] bg-muted/20 animate-pulse" />}>
         <DespesasAnalyticsSection dateRange={dateRange} />
       </Suspense>
 
-      <Suspense fallback={<div className="h-[60px] bg-muted/20 rounded-xl animate-pulse" />}>
+      <Suspense fallback={<div className="h-[84px] rounded-[24px] bg-muted/20 animate-pulse" />}>
         <TransactionFilters />
       </Suspense>
 
-      <TransactionTable
-        data={data}
-        page={Number(meta.page)}
-        totalPages={Number(meta.totalPages)}
-        type="PAYABLE"
-      />
+      <div className="data-table-shell">
+        <TransactionTable
+          data={data}
+          page={Number(meta.page)}
+          totalPages={Number(meta.totalPages)}
+          type="PAYABLE"
+        />
+      </div>
     </div>
   );
 }

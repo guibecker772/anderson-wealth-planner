@@ -1,7 +1,8 @@
 import { Suspense } from "react";
+import { Users } from "lucide-react";
 import { InvestidoresContent } from "@/components/investidores/InvestidoresContent";
 import { Badge } from "@/components/ui/badge";
-import { Users } from "lucide-react";
+import { PageHero } from "@/components/ui/PageHero";
 import { parseDateRangeFromSearchParams } from "@/lib/dateRange";
 import { getInvestorList } from "@/lib/analytics/investor-metrics";
 import { db } from "@/lib/db";
@@ -39,24 +40,27 @@ async function InvestidoresSection({ searchParams }: InvestidoresPageProps) {
 }
 
 export default function InvestidoresPage({ searchParams }: InvestidoresPageProps) {
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground">Investidores</h2>
-            <Badge variant="default" size="lg" className="flex items-center gap-1">
-              <Users className="w-3 h-3" />
-              PortfÃ³lio
-            </Badge>
-          </div>
-          <p className="text-muted-foreground text-sm mt-1">
-            Visualize o desempenho dos veÃ­culos por investidor
-          </p>
-        </div>
-      </div>
+  const dateRange = parseDateRangeFromSearchParams(searchParams);
 
-      <Suspense fallback={<div className="h-[400px] bg-muted/20 rounded-xl animate-pulse" />}>
+  return (
+    <div className="page-shell">
+      <PageHero
+        eyebrow="Portfólio"
+        title="Investidores"
+        description="A nova composição aproxima operação e financeiro identificado sem fingir completude, deixando visível o que é individual, o que é corporativo e o que ainda depende de conciliação."
+        accent="blue"
+        meta={
+          <>
+            <Badge variant="accent" size="lg" className="flex items-center gap-1">
+              <Users className="w-3 h-3" />
+              Portfólio
+            </Badge>
+            <span className="page-hero-chip">{dateRange.from} → {dateRange.to}</span>
+          </>
+        }
+      />
+
+      <Suspense fallback={<div className="h-[460px] rounded-[24px] bg-muted/20 animate-pulse" />}>
         <InvestidoresSection searchParams={searchParams} />
       </Suspense>
     </div>

@@ -496,7 +496,7 @@ export function LocalImportCard({ initialStatus, initialMessage = null }: LocalI
   };
 
   return (
-    <div className="border rounded-xl p-6 bg-card space-y-6">
+    <div className="module-surface module-surface-financial">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div className="space-y-2">
           <div className="flex items-center gap-2">
@@ -534,7 +534,7 @@ export function LocalImportCard({ initialStatus, initialMessage = null }: LocalI
       </div>
 
       <div className="grid gap-6 xl:grid-cols-3">
-        <div className="space-y-4 border rounded-xl p-5 bg-muted/20">
+        <div className="glass-panel space-y-4 p-5">
           <div>
             <p className="text-sm font-semibold text-foreground">Pasta local desta maquina</p>
             <p className="text-xs text-muted-foreground mt-1">
@@ -565,7 +565,7 @@ export function LocalImportCard({ initialStatus, initialMessage = null }: LocalI
             </Button>
           </div>
 
-          <div className="rounded-lg border bg-background p-3 space-y-2">
+          <div className="rounded-[22px] border border-white/80 bg-white/88 p-4 shadow-[0_18px_40px_-30px_rgba(15,23,42,0.24)] space-y-2">
             <p className="text-xs font-medium text-muted-foreground">Arquivos detectados em inbox/ desta maquina</p>
             {deviceInboxFiles.length > 0 ? (
               <div className="space-y-2">
@@ -589,7 +589,7 @@ export function LocalImportCard({ initialStatus, initialMessage = null }: LocalI
           </div>
         </div>
 
-        <div className="space-y-4 border rounded-xl p-5 bg-muted/20">
+        <div className="glass-panel space-y-4 p-5">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-sm font-semibold text-foreground">Pasta global do servidor</p>
@@ -640,7 +640,7 @@ export function LocalImportCard({ initialStatus, initialMessage = null }: LocalI
           )}
         </div>
 
-        <div className="space-y-4 border rounded-xl p-5">
+        <div className="glass-panel space-y-4 p-5">
           <div>
             <p className="text-sm font-semibold text-foreground">Upload manual de arquivo</p>
             <p className="text-xs text-muted-foreground mt-1">
@@ -696,7 +696,7 @@ export function LocalImportCard({ initialStatus, initialMessage = null }: LocalI
       )}
 
       {importResult && (
-        <div className="rounded-xl border bg-muted/20 p-4 space-y-4">
+        <div className="glass-panel p-4 space-y-4">
           <div className="flex flex-wrap gap-4 text-sm">
             <span>Arquivos importados: <strong className="text-emerald-700">{importResult.importedFiles}</strong></span>
             <span>Arquivos ignorados: <strong className="text-amber-700">{importResult.skippedFiles}</strong></span>
@@ -706,7 +706,7 @@ export function LocalImportCard({ initialStatus, initialMessage = null }: LocalI
 
           <div className="space-y-2">
             {importResult.files.map((file) => (
-              <div key={`${file.file}-${file.hash}-${file.effectiveSourceMode}`} className="rounded-lg border bg-background p-3">
+              <div key={`${file.file}-${file.hash}-${file.effectiveSourceMode}`} className="rounded-[22px] border border-white/80 bg-white/88 p-4 shadow-[0_18px_40px_-30px_rgba(15,23,42,0.24)]">
                 <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                   <div>
                     <p className="font-medium text-sm">{file.file}</p>
@@ -765,7 +765,7 @@ export function LocalImportCard({ initialStatus, initialMessage = null }: LocalI
           {(status?.recentFiles || []).map((file) => {
             const effectiveMode = resolveFileMode(file);
             return (
-              <div key={file.id} className="rounded-xl border p-4 bg-background">
+              <div key={file.id} className="rounded-[24px] border border-white/80 bg-white/88 p-4 shadow-[0_18px_40px_-30px_rgba(15,23,42,0.24)]">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
@@ -870,7 +870,7 @@ function PathRow({
   extra?: string;
 }) {
   return (
-    <div className="rounded-lg border bg-background p-3">
+    <div className="rounded-[20px] border border-white/80 bg-white/88 p-3 shadow-[0_18px_40px_-30px_rgba(15,23,42,0.24)]">
       <div className="flex items-center justify-between gap-3">
         <div className="space-y-1">
           <p className="text-xs font-medium text-muted-foreground">{label}</p>
@@ -887,7 +887,7 @@ function PathRow({
 
 function FolderMetric({ label, value, icon }: { label: string; value: number; icon: ReactNode }) {
   return (
-    <div className="rounded-lg border bg-background p-3">
+    <div className="rounded-[20px] border border-white/80 bg-white/88 p-3 shadow-[0_18px_40px_-30px_rgba(15,23,42,0.24)]">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs text-muted-foreground">{label}</p>
@@ -901,7 +901,7 @@ function FolderMetric({ label, value, icon }: { label: string; value: number; ic
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border bg-background p-3">
+    <div className="rounded-[20px] border border-white/80 bg-white/88 p-3 shadow-[0_18px_40px_-30px_rgba(15,23,42,0.24)]">
       <p className="text-xs font-medium text-muted-foreground">{label}</p>
       <p className="text-sm mt-1 break-all">{value}</p>
     </div>

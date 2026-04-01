@@ -65,7 +65,7 @@ export function NotificationBell() {
     <div className="relative" ref={panelRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-9 h-9 rounded-lg bg-muted/50 hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors relative"
+        className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-[#022D44]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(244,248,251,0.96))] text-muted-foreground shadow-[0_16px_36px_-28px_rgba(2,45,68,0.42)] transition-all hover:border-[#022D44]/18 hover:text-foreground"
         title="Notificações"
       >
         <Bell className="w-4 h-4" />
@@ -79,9 +79,9 @@ export function NotificationBell() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 bg-popover border border-border/80 rounded-xl shadow-xl z-50 overflow-hidden animate-in">
+        <div className="absolute right-0 z-50 mt-3 w-80 overflow-hidden rounded-[24px] border border-white/80 bg-popover/95 shadow-[0_28px_70px_-36px_rgba(2,45,68,0.45)] backdrop-blur-xl animate-in">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 bg-muted/30">
+          <div className="flex items-center justify-between border-b border-border/50 bg-[linear-gradient(180deg,rgba(2,45,68,0.05),rgba(255,255,255,0.68))] px-5 py-4">
             <span className="text-sm font-semibold text-foreground">Notificações</span>
             <button
               onClick={() => setIsOpen(false)}

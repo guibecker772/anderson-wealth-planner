@@ -56,16 +56,17 @@ export default async function CategoriasPage({ searchParams }: { searchParams: {
       )}
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="page-header">
         <div>
           <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground">Categorias</h2>
+            <div className="w-1 h-7 rounded-full bg-[#A8CF4C]" />
+            <h2 className="text-xl font-bold tracking-tight text-foreground">Categorias</h2>
             <Badge variant="accent" size="lg">
               <Tags className="w-3 h-3 mr-1" />
               {ranking.length}
             </Badge>
           </div>
-          <p className="text-muted-foreground text-sm mt-1">
+          <p className="text-muted-foreground text-sm mt-1 ml-[22px]">
             Análise de gastos por categoria no período
           </p>
         </div>
@@ -80,7 +81,7 @@ export default async function CategoriasPage({ searchParams }: { searchParams: {
       <div className="grid md:grid-cols-2 gap-6">
         
         {/* Card: Ranking */}
-        <div className="md:col-span-1 rounded-xl border bg-card shadow-sm">
+        <div className="md:col-span-1 card-premium">
           <div className="p-6 border-b">
             <h3 className="font-semibold text-foreground">Ranking de Despesas</h3>
             <p className="text-sm text-muted-foreground mt-1">Para onde foi o dinheiro no período (Pagos)</p>
@@ -97,7 +98,7 @@ export default async function CategoriasPage({ searchParams }: { searchParams: {
                 {ranking.map((item, idx) => (
                   <TableRow key={idx} className="hover:bg-muted/30">
                     <TableCell>
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-secondary text-secondary-foreground text-sm">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground text-[11px] font-medium">
                         {item.category || "Sem Categoria"}
                       </span>
                     </TableCell>
@@ -127,7 +128,7 @@ export default async function CategoriasPage({ searchParams }: { searchParams: {
         </div>
 
         {/* Card: Normalização (De/Para) - Funcional */}
-        <div className="md:col-span-1 rounded-xl border bg-card shadow-sm">
+        <div className="md:col-span-1 card-premium">
           <div className="p-6 border-b">
             <div className="flex items-center justify-between">
               <div>

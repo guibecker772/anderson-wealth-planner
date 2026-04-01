@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { LocalImportCard } from '@/components/config/LocalImportCard';
+import { PageHero } from '@/components/ui/PageHero';
 import { getFolderStatus } from '@/lib/import/localImporter';
 
 async function ImportSection() {
@@ -21,29 +22,35 @@ async function ImportSection() {
 
 export default function ConfiguracoesPage() {
   return (
-    <div className="space-y-6 max-w-5xl">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Configurações</h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Central de importação do sistema web principal. Os arquivos entram aqui e os dados consolidados passam a ser servidos pelo banco.
-        </p>
-      </div>
+    <div className="page-shell max-w-6xl">
+      <PageHero
+        eyebrow="Sistema"
+        title="Configurações"
+        description="A central de importação ganha uma presença mais executiva, com atmosfera de cockpit operacional e um enquadramento visual compatível com a importância do pipeline."
+        accent="blue"
+        meta={
+          <>
+            <span className="page-hero-chip">Importação multiaba</span>
+            <span className="page-hero-chip">Workflow recorrente</span>
+          </>
+        }
+      />
 
       <div className="grid gap-6">
-        <Suspense fallback={<div className="h-[640px] bg-muted/20 rounded-xl animate-pulse" />}>
+        <Suspense fallback={<div className="h-[640px] rounded-[24px] bg-muted/20 animate-pulse" />}>
           <ImportSection />
         </Suspense>
 
-        <div className="border rounded-xl p-6 bg-card space-y-4">
-          <h3 className="font-semibold text-lg text-red-600">Zona de Perigo</h3>
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div className="card-premium space-y-4 border-red-200/50 p-6">
+          <h3 className="text-lg font-semibold text-red-600">Zona de Perigo</h3>
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-sm font-medium">Reprocessar todo o histórico</p>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="mt-1 text-xs text-muted-foreground">
                 Use apenas quando houver necessidade operacional clara, porque o fluxo normal agora é incremental por arquivo.
               </p>
             </div>
-            <button className="border border-red-200 text-red-600 hover:bg-red-50 px-4 py-2 rounded-md text-sm font-medium">
+            <button className="rounded-xl border border-red-200 bg-red-50/70 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-100">
               Executar
             </button>
           </div>
