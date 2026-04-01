@@ -2,55 +2,47 @@
 
 import { Suspense } from 'react';
 import { usePathname } from 'next/navigation';
-import { DateRangePicker } from '@/components/ui/DateRangePicker';
-import { Bell, User } from 'lucide-react';
+import { GlobalDateRangePicker } from '@/components/ui/GlobalDateRangePicker';
+import { NotificationBell } from '@/components/ui/NotificationBell';
+import { UserMenu } from '@/components/ui/UserMenu';
 
-// Map routes to page titles
-const pageTitles: Record<string, string> = {
-  '/dashboard': 'Visão Geral',
-  '/receitas': 'Receitas',
-  '/despesas': 'Despesas',
-  '/categorias': 'Categorias',
-  '/relatorios': 'Relatórios',
-  '/configuracoes': 'Configurações',
+// Map routes to page titles and subtitles
+const pageInfo: Record<string, { title: string; subtitle: string }> = {
+  '/dashboard': { title: 'Visão Geral', subtitle: 'Painel executivo' },
+  '/receitas': { title: 'Receitas', subtitle: 'Entradas e faturamento' },
+  '/despesas': { title: 'Despesas', subtitle: 'Saídas e custos operacionais' },
+  '/multas': { title: 'Multas', subtitle: 'Infrações e veículos' },
+  '/investidores': { title: 'Investidores', subtitle: 'Portfólio e retorno' },
+  '/relatorios': { title: 'Relatórios', subtitle: 'Importações e qualidade' },
+  '/configuracoes': { title: 'Configurações', subtitle: 'Importação e sistema' },
+  '/categorias': { title: 'Categorias', subtitle: 'Normalização e ranking' },
 };
 
 export function Topbar() {
   const pathname = usePathname();
-  const pageTitle = pageTitles[pathname] || 'ClikFinance';
+  const info = pageInfo[pathname] || { title: 'ClikFinance', subtitle: 'Gestão Financeira' };
 
   return (
     <header 
       className="h-16 border-b border-border/50 bg-background/95 backdrop-blur-sm fixed top-0 right-0 left-64 z-40 flex items-center justify-between px-6"
-      style={{ '--header-height': '64px' } as React.CSSProperties}
     >
       {/* Page Title */}
       <div>
-        <h1 className="text-lg font-semibold text-foreground">{pageTitle}</h1>
-        <p className="text-xs text-muted-foreground">Gestão Financeira</p>
+        <h1 className="text-lg font-semibold text-foreground leading-tight">{info.title}</h1>
+        <p className="text-xs text-muted-foreground">{info.subtitle}</p>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5">
         {/* Global Date Range Filter */}
-        <Suspense fallback={<div className="w-[150px] h-[36px] bg-muted rounded-lg animate-pulse" />}>
-          <DateRangePicker />
+        <Suspense fallback={<div className="w-[150px] h-[36px] bg-muted rounded-full animate-pulse" />}>
+          <GlobalDateRangePicker />
         </Suspense>
         
         {/* Notification Bell */}
-        <button 
-          className="w-9 h-9 rounded-lg bg-muted/50 hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-          title="Notificações"
-        >
-          <Bell className="w-4 h-4" />
-        </button>
+        <NotificationBell />
         
-        {/* User Avatar */}
-        <button 
-          className="w-9 h-9 rounded-lg bg-[#022D44] flex items-center justify-center text-white hover:bg-[#022D44]/80 transition-colors"
-          title="Perfil"
-        >
-          <User className="w-4 h-4" />
-        </button>
+        {/* User / System Menu */}
+        <UserMenu />
       </div>
     </header>
   );

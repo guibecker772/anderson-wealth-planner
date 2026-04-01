@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   AlertTriangle,
   Car,
+  Landmark,
   TrendingUp,
   TrendingDown,
   Wrench,
@@ -42,8 +43,9 @@ export function InvestorDetailContent({ data, dateRange, error }: InvestorDetail
     );
   }
 
-  const { investor, totals, vehicles } = data;
-  const isPositiveResult = totals.netResult >= 0;
+  const { investor, totals, vehicles, financialLinks, allocationSummary } = data;
+  const isPositiveOperational = totals.operationalResult >= 0;
+  const isPositiveExpanded = totals.expandedResult >= 0;
 
   return (
     <div className="space-y-6">
@@ -67,39 +69,57 @@ export function InvestorDetailContent({ data, dateRange, error }: InvestorDetail
         <DateRangeBadge from={dateRange.from} to={dateRange.to} />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
         <KPICard
-          title="Receita Recebida"
-          value={formatCurrencyFull(totals.rentalIncome)}
+          title="Receita Operacional"
+          value={formatCurrencyFull(totals.operationalRevenue)}
           icon={<TrendingUp className="w-5 h-5" />}
           iconBg="bg-emerald-500/10"
           iconColor="text-emerald-600"
           valueColor="text-emerald-600"
         />
         <KPICard
-          title="Manutencao"
-          value={formatCurrencyFull(totals.maintenanceCost + totals.discountCost)}
+          title="Custo Operacional"
+          value={formatCurrencyFull(totals.operationalCost)}
           icon={<Wrench className="w-5 h-5" />}
           iconBg="bg-blue-500/10"
           iconColor="text-blue-600"
           valueColor="text-blue-600"
-          subtext={`Descontos operacionais: ${formatCurrencyFull(totals.discountCost)}`}
+          subtext={`Multas op.: ${formatCurrencyFull(totals.operationalFines)} • Desc.: ${formatCurrencyFull(totals.operationalDiscount)}`}
         />
         <KPICard
-          title="Multas"
-          value={formatCurrencyFull(totals.finesCost)}
-          icon={<AlertTriangle className="w-5 h-5" />}
+          title="Resultado Operacional"
+          value={formatCurrencyFull(totals.operationalResult)}
+          icon={isPositiveOperational ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
+          iconBg={isPositiveOperational ? "bg-emerald-500/10" : "bg-red-500/10"}
+          iconColor={isPositiveOperational ? "text-emerald-600" : "text-red-600"}
+          valueColor={isPositiveOperational ? "text-emerald-600" : "text-red-600"}
+        />
+        <KPICard
+          title="Entrada Financeira"
+          value={formatCurrencyFull(totals.identifiedFinancialInflow)}
+          icon={<Landmark className="w-5 h-5" />}
+          iconBg="bg-emerald-500/10"
+          iconColor="text-emerald-600"
+          valueColor="text-emerald-600"
+        />
+        <KPICard
+          title="Saída Financeira"
+          value={formatCurrencyFull(totals.identifiedFinancialOutflow)}
+          icon={<Landmark className="w-5 h-5" />}
           iconBg="bg-amber-500/10"
           iconColor="text-amber-600"
           valueColor="text-amber-600"
+          subtext={`${allocationSummary.linkedEntryCount} vínculo(s) auditáveis`}
         />
         <KPICard
-          title="Resultado Liquido"
-          value={formatCurrencyFull(totals.netResult)}
-          icon={isPositiveResult ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
-          iconBg={isPositiveResult ? "bg-emerald-500/10" : "bg-red-500/10"}
-          iconColor={isPositiveResult ? "text-emerald-600" : "text-red-600"}
-          valueColor={isPositiveResult ? "text-emerald-600" : "text-red-600"}
+          title="Resultado Expandido"
+          value={formatCurrencyFull(totals.expandedResult)}
+          icon={isPositiveExpanded ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
+          iconBg={isPositiveExpanded ? "bg-emerald-500/10" : "bg-red-500/10"}
+          iconColor={isPositiveExpanded ? "text-emerald-600" : "text-red-600"}
+          valueColor={isPositiveExpanded ? "text-emerald-600" : "text-red-600"}
+          subtext="Operacional + financeiro identificado"
         />
       </div>
 
@@ -107,7 +127,7 @@ export function InvestorDetailContent({ data, dateRange, error }: InvestorDetail
         <div className="p-4 border-b">
           <div className="flex items-center gap-2">
             <Car className="w-5 h-5 text-muted-foreground" />
-            <h3 className="font-semibold text-foreground">Detalhamento por Veiculo</h3>
+            <h3 className="font-semibold text-foreground">Detalhamento Operacional por Veiculo</h3>
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -170,13 +190,76 @@ export function InvestorDetailContent({ data, dateRange, error }: InvestorDetail
         </div>
       </div>
 
+      <div className="border rounded-xl bg-card shadow-sm overflow-hidden">
+        <div className="p-4 border-b">
+          <div className="flex items-center gap-2">
+            <Landmark className="w-5 h-5 text-muted-foreground" />
+            <h3 className="font-semibold text-foreground">Vínculos Financeiros Identificados</h3>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Apenas lançamentos com nome explícito do investidor em contexto financeiro entram aqui.
+          </p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50">
+              <tr>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Data</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Grupo</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Detalhe</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Regra</th>
+                <th className="px-4 py-3 text-right font-medium text-muted-foreground">Valor</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {financialLinks.map((link) => (
+                <tr key={link.id} className="hover:bg-muted/30 transition-colors">
+                  <td className="px-4 py-3 whitespace-nowrap">{link.entryDate}</td>
+                  <td className="px-4 py-3">
+                    <div className="space-y-0.5">
+                      <div>{link.groupRaw || '-'}</div>
+                      <div className="text-xs text-muted-foreground">{link.categoryRaw || link.accountRaw || '-'}</div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 max-w-[280px]">
+                    <div className="space-y-0.5">
+                      <div className="truncate">{link.detailRaw || '-'}</div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        {link.sourceSheetName} • linha {link.sourceRowNumber}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 max-w-[260px]">
+                    <div className="space-y-0.5">
+                      <div>{link.ruleLabel}</div>
+                      <div className="text-xs text-muted-foreground truncate">{link.rationale}</div>
+                    </div>
+                  </td>
+                  <td className={`px-4 py-3 text-right whitespace-nowrap font-medium ${link.direction === 'OUTFLOW' ? 'text-amber-600' : 'text-emerald-600'}`}>
+                    {formatCurrencyFull(link.amount)}
+                  </td>
+                </tr>
+              ))}
+              {financialLinks.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                    Nenhum lançamento financeiro com vínculo confiável foi identificado para este investidor
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <div className="bg-muted/30 rounded-xl border p-4">
         <h4 className="font-medium text-sm mb-2">Notas</h4>
         <ul className="text-xs text-muted-foreground space-y-1">
-          <li>Receita recebida usa `Valor Pago (Semana)` da base operacional.</li>
-          <li>Custos incluem manutencao por motorista e descontos operacionais.</li>
-          <li>Multas usam `Multa/atraso` da planilha operacional.</li>
-          <li>Situacao do veiculo vem do snapshot operacional mais recente no periodo.</li>
+          <li>Receita operacional usa `Valor Pago (Semana)` da base operacional.</li>
+          <li>Custo operacional inclui manutencao, desconto e `Multa/atraso` operacional.</li>
+          <li>Financeiro identificado só considera vínculo forte e auditável por nome explícito do investidor.</li>
+          <li>Não entram no resultado individual: impostos, juros, despesa fixa, não identificado, repasses ambíguos e multas oficiais sem `Quem Pagou`.</li>
+          <li>{allocationSummary.linkageCoverageNote}</li>
         </ul>
       </div>
     </div>

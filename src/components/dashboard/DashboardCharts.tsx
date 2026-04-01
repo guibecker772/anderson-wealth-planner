@@ -15,6 +15,8 @@ import {
   Bar,
   Cell,
   ReferenceLine,
+  Area,
+  AreaChart,
 } from 'recharts';
 import {
   TrendingUp,
@@ -27,6 +29,15 @@ import {
   ArrowDownCircle,
   Percent,
   HelpCircle,
+  DollarSign,
+  Target,
+  PiggyBank,
+  BarChart3,
+  Truck,
+  ShieldAlert,
+  ArrowUpRight,
+  ArrowDownRight,
+  Minus,
 } from 'lucide-react';
 import { formatDateDisplay } from '@/lib/dateRange';
 import { DateRangeBadge } from '@/components/ui/DateRangePicker';
@@ -294,24 +305,25 @@ export function DashboardCharts({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* ── Header ── */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-foreground">Painel Executivo</h2>
           <p className="mt-0.5 text-sm text-muted-foreground">Visao financeira e operacional sem dupla contagem</p>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1 rounded-lg border bg-muted/50 p-1">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-0.5 rounded-lg border bg-muted/30 p-0.5">
             {GRANULARITY_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
                 onClick={() => handleBucketChange(opt.value)}
                 disabled={loading}
-                className={`rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
+                className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
                   bucket === opt.value
                     ? 'bg-white text-foreground shadow-sm'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                } ${loading ? 'opacity-70' : ''}`}
+                } ${loading ? 'opacity-60' : ''}`}
               >
                 {opt.label}
               </button>
@@ -324,29 +336,18 @@ export function DashboardCharts({
 
       {emptyState ? <DashboardEmptyBanner emptyState={emptyState} /> : null}
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {/* ── Primary KPIs ── */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <KPICard
           title="Resultado Financeiro"
           value={formatCurrencyFull(execData.summary.profitCash ?? summary.netProfit)}
           tooltip="Entradas financeiras menos despesas financeiras do periodo"
           deltaPct={showComparisons ? execData.comparison.profitCash.deltaPct : undefined}
           deltaValue={showComparisons ? execData.comparison.profitCash.deltaValue : undefined}
-          icon={<Wallet className="h-5 w-5" />}
-          iconBg={(execData.summary.profitCash ?? summary.netProfit) >= 0 ? 'bg-emerald-500/10' : 'bg-red-500/10'}
-          iconColor={(execData.summary.profitCash ?? summary.netProfit) >= 0 ? 'text-emerald-600' : 'text-red-600'}
-          valueColor={(execData.summary.profitCash ?? summary.netProfit) >= 0 ? 'text-emerald-600' : 'text-red-600'}
+          icon={<DollarSign className="h-5 w-5" />}
+          accent={(execData.summary.profitCash ?? summary.netProfit) >= 0 ? 'emerald' : 'red'}
           deltaPositiveIsGood
-        />
-        <KPICard
-          title="Margem"
-          value={marginValue}
-          tooltip="Lucro dividido pela Receita Recebida"
-          deltaPP={showComparisons ? execData.comparison.margin.deltaPP : undefined}
-          icon={<Percent className="h-5 w-5" />}
-          iconBg={(execData.summary.margin ?? 0) >= 0 ? 'bg-blue-500/10' : 'bg-red-500/10'}
-          iconColor={(execData.summary.margin ?? 0) >= 0 ? 'text-blue-600' : 'text-red-600'}
-          valueColor={(execData.summary.margin ?? 0) >= 0 ? 'text-blue-600' : 'text-red-600'}
-          deltaPositiveIsGood
+          featured
         />
         <KPICard
           title="Receita Financeira"
@@ -354,9 +355,7 @@ export function DashboardCharts({
           tooltip="Entradas do ledger financeiro (aba Receita)"
           deltaPct={showComparisons ? execData.comparison.incomeReceived.deltaPct : undefined}
           icon={<TrendingUp className="h-5 w-5" />}
-          iconBg="bg-emerald-500/10"
-          iconColor="text-emerald-600"
-          valueColor="text-emerald-600"
+          accent="emerald"
           deltaPositiveIsGood
         />
         <KPICard
@@ -365,14 +364,22 @@ export function DashboardCharts({
           tooltip="Saidas financeiras da aba Despesa"
           deltaPct={showComparisons ? execData.comparison.expensePaid.deltaPct : undefined}
           icon={<TrendingDown className="h-5 w-5" />}
-          iconBg="bg-red-500/10"
-          iconColor="text-red-600"
-          valueColor="text-red-600"
+          accent="red"
           deltaPositiveIsGood={false}
         />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      {/* ── Secondary KPIs ── */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <KPICard
+          title="Margem"
+          value={marginValue}
+          tooltip="Lucro dividido pela Receita Recebida"
+          deltaPP={showComparisons ? execData.comparison.margin.deltaPP : undefined}
+          icon={<Percent className="h-5 w-5" />}
+          accent={(execData.summary.margin ?? 0) >= 0 ? 'blue' : 'red'}
+          deltaPositiveIsGood
+        />
         <KPICard
           title="Contas a Receber"
           value={formatCurrencyFull(summary.pendingReceivables)}
@@ -380,8 +387,7 @@ export function DashboardCharts({
           subtext={summary.overdueReceivables > 0 ? `${formatCurrencyFull(summary.overdueReceivables)} vencidos` : undefined}
           deltaPct={showComparisons ? execData.comparison.receivable.deltaPct : undefined}
           icon={<ArrowDownCircle className="h-5 w-5" />}
-          iconBg={summary.overdueReceivables > 0 ? 'bg-amber-500/10' : 'bg-emerald-500/10'}
-          iconColor={summary.overdueReceivables > 0 ? 'text-amber-600' : 'text-emerald-600'}
+          accent={summary.overdueReceivables > 0 ? 'amber' : 'emerald'}
         />
         <KPICard
           title="Contas a Pagar"
@@ -390,311 +396,236 @@ export function DashboardCharts({
           subtext={summary.overduePayables > 0 ? `${formatCurrencyFull(summary.overduePayables)} vencidos` : undefined}
           deltaPct={showComparisons ? execData.comparison.payable.deltaPct : undefined}
           icon={<Receipt className="h-5 w-5" />}
-          iconBg={summary.overduePayables > 0 ? 'bg-amber-500/10' : 'bg-[#022D44]/10'}
-          iconColor={summary.overduePayables > 0 ? 'text-amber-600' : 'text-[#022D44]'}
+          accent={summary.overduePayables > 0 ? 'amber' : 'slate'}
+        />
+        <KPICard
+          title="Investimentos"
+          value={formatCurrencyFull(financialSummary?.investments ?? 0)}
+          tooltip="Total de investimentos no periodo"
+          icon={<PiggyBank className="h-5 w-5" />}
+          accent="blue"
         />
       </div>
 
+      {/* ── Layer Modules: Financeiro + Operacional ── */}
       {financialSummary || operationalSummary ? (
         <div className="grid gap-6 lg:grid-cols-2">
           {financialSummary ? (
-            <div className="rounded-xl border bg-card p-6 shadow-sm">
-              <div className="mb-4">
-                <h3 className="font-semibold text-foreground">Camada Financeira</h3>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  Caixa canônico do workbook: Receita, Despesa e Investimentos
-                </p>
+            <LayerModule
+              title="Camada Financeira"
+              subtitle="Caixa canônico: Receita, Despesa e Investimentos"
+              accentColor="border-l-emerald-500"
+              icon={<Wallet className="h-4 w-4 text-emerald-600" />}
+            >
+              <div className="grid gap-3 sm:grid-cols-2">
+                <MiniKPI label="Entradas" value={formatCurrencyFull(financialSummary.revenue)} colorClass="text-emerald-600" icon={<TrendingUp className="h-3.5 w-3.5" />} />
+                <MiniKPI label="Saídas" value={formatCurrencyFull(financialSummary.expense)} colorClass="text-red-600" icon={<TrendingDown className="h-3.5 w-3.5" />} />
+                <MiniKPI label="Investimentos" value={formatCurrencyFull(financialSummary.investments)} colorClass="text-blue-600" icon={<PiggyBank className="h-3.5 w-3.5" />} />
+                <MiniKPI
+                  label="Saldo após investimentos"
+                  value={formatCurrencyFull(financialSummary.netCashAfterInvestments)}
+                  colorClass={financialSummary.netCashAfterInvestments >= 0 ? 'text-emerald-600' : 'text-red-600'}
+                  icon={<DollarSign className="h-3.5 w-3.5" />}
+                  highlight
+                />
               </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <KPICard title="Entradas" value={formatCurrencyFull(financialSummary.revenue)} icon={<TrendingUp className="h-5 w-5" />} iconBg="bg-emerald-500/10" iconColor="text-emerald-600" valueColor="text-emerald-600" />
-                <KPICard title="Saidas" value={formatCurrencyFull(financialSummary.expense)} icon={<TrendingDown className="h-5 w-5" />} iconBg="bg-red-500/10" iconColor="text-red-600" valueColor="text-red-600" />
-                <KPICard title="Investimentos" value={formatCurrencyFull(financialSummary.investments)} icon={<Receipt className="h-5 w-5" />} iconBg="bg-[#022D44]/10" iconColor="text-[#022D44]" />
-                <KPICard title="Saldo apos investimentos" value={formatCurrencyFull(financialSummary.netCashAfterInvestments)} icon={<Wallet className="h-5 w-5" />} iconBg="bg-blue-500/10" iconColor="text-blue-600" valueColor={financialSummary.netCashAfterInvestments >= 0 ? 'text-blue-600' : 'text-red-600'} />
+              <div className="mt-3 pt-3 border-t border-border/40 flex items-center gap-2 text-[11px] text-muted-foreground">
+                <BarChart3 className="h-3 w-3" />
+                {financialSummary.entryCount} lançamentos no período
               </div>
-            </div>
+            </LayerModule>
           ) : null}
           {operationalSummary ? (
-            <div className="rounded-xl border bg-card p-6 shadow-sm">
-              <div className="mb-4">
-                <h3 className="font-semibold text-foreground">Camada Operacional</h3>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  Cobranca e custos da frota vindos de OperationalSnapshot
-                </p>
+            <LayerModule
+              title="Camada Operacional"
+              subtitle="Cobrança e custos da frota (OperationalSnapshot)"
+              accentColor="border-l-amber-500"
+              icon={<Truck className="h-4 w-4 text-amber-600" />}
+            >
+              <div className="grid gap-3 sm:grid-cols-2">
+                <MiniKPI label="Receita operacional" value={formatCurrencyFull(operationalSummary.revenueReceived)} colorClass="text-emerald-600" icon={<TrendingUp className="h-3.5 w-3.5" />} />
+                <MiniKPI label="Custo operacional" value={formatCurrencyFull(operationalSummary.operationalCost)} colorClass="text-amber-600" icon={<TrendingDown className="h-3.5 w-3.5" />} />
+                <MiniKPI label="Valor a cobrar" value={formatCurrencyFull(operationalSummary.amountToCharge)} colorClass="text-foreground" icon={<Target className="h-3.5 w-3.5" />} />
+                <MiniKPI
+                  label="Resultado operacional"
+                  value={formatCurrencyFull(operationalSummary.netOperational)}
+                  colorClass={operationalSummary.netOperational >= 0 ? 'text-emerald-600' : 'text-red-600'}
+                  icon={<DollarSign className="h-3.5 w-3.5" />}
+                  highlight
+                  subtext={operationalSummary.pendingReceivables > 0 ? `${formatCurrencyFull(operationalSummary.pendingReceivables)} em aberto` : undefined}
+                />
               </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <KPICard title="Receita operacional" value={formatCurrencyFull(operationalSummary.revenueReceived)} icon={<TrendingUp className="h-5 w-5" />} iconBg="bg-emerald-500/10" iconColor="text-emerald-600" valueColor="text-emerald-600" />
-                <KPICard title="Custo operacional" value={formatCurrencyFull(operationalSummary.operationalCost)} icon={<TrendingDown className="h-5 w-5" />} iconBg="bg-amber-500/10" iconColor="text-amber-600" valueColor="text-amber-600" />
-                <KPICard title="Valor a cobrar" value={formatCurrencyFull(operationalSummary.amountToCharge)} icon={<ArrowDownCircle className="h-5 w-5" />} iconBg="bg-[#022D44]/10" iconColor="text-[#022D44]" />
-                <KPICard title="Resultado operacional" value={formatCurrencyFull(operationalSummary.netOperational)} icon={<Wallet className="h-5 w-5" />} iconBg="bg-blue-500/10" iconColor="text-blue-600" valueColor={operationalSummary.netOperational >= 0 ? 'text-blue-600' : 'text-red-600'} subtext={operationalSummary.pendingReceivables > 0 ? `${formatCurrencyFull(operationalSummary.pendingReceivables)} em aberto` : undefined} />
+              {/* Fleet & Quality Summary */}
+              <div className="mt-3 pt-3 border-t border-border/40 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
+                <span className="flex items-center gap-1"><Truck className="h-3 w-3" />{operationalSummary.snapshotCount} snapshots</span>
+                {operationalSummary.fleetStates.length > 0 ? (
+                  operationalSummary.fleetStates.slice(0, 3).map((fs) => (
+                    <span key={fs.status} className="bg-muted/50 px-1.5 py-0.5 rounded text-[10px]">{fs.status}: {fs.count}</span>
+                  ))
+                ) : null}
               </div>
-            </div>
+            </LayerModule>
           ) : null}
         </div>
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border bg-card p-6 shadow-sm">
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold text-foreground">Receita vs Despesa</h3>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Por {bucket === 'day' ? 'dia' : bucket === 'week' ? 'semana' : 'mes'}
-              </p>
-            </div>
+      {/* ── Quality Alerts (if applicable) ── */}
+      {operationalSummary && hasQualityAlerts(operationalSummary.qualitySummary) ? (
+        <div className="rounded-xl border border-amber-200/60 bg-amber-50/30 p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <ShieldAlert className="h-4 w-4 text-amber-600" />
+            <h4 className="text-sm font-semibold text-foreground">Alertas de Qualidade</h4>
           </div>
+          <div className="flex flex-wrap gap-3">
+            {operationalSummary.qualitySummary.REVIEW_REQUIRED > 0 && (
+              <QualityBadge label="Revisão necessária" count={operationalSummary.qualitySummary.REVIEW_REQUIRED} variant="error" />
+            )}
+            {operationalSummary.qualitySummary.WARNING > 0 && (
+              <QualityBadge label="Alertas" count={operationalSummary.qualitySummary.WARNING} variant="warning" />
+            )}
+            {operationalSummary.qualitySummary.UNKNOWN > 0 && (
+              <QualityBadge label="Desconhecido" count={operationalSummary.qualitySummary.UNKNOWN} variant="neutral" />
+            )}
+            {operationalSummary.qualitySummary.OK > 0 && (
+              <QualityBadge label="OK" count={operationalSummary.qualitySummary.OK} variant="success" />
+            )}
+          </div>
+        </div>
+      ) : null}
+
+      {/* ── Charts Row 1: Revenue vs Expense + Profit Evolution ── */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <ChartCard title="Receita vs Despesa" subtitle={`Por ${bucket === 'day' ? 'dia' : bucket === 'week' ? 'semana' : 'mes'}`}>
           {execData.series.length > 0 ? (
-            <div className="h-[280px]">
+            <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={execData.series} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="bucketLabel" className="text-xs" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
-                  <YAxis tickFormatter={(value) => formatCurrency(value)} className="text-xs" />
+                <BarChart data={execData.series} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} />
+                  <XAxis dataKey="bucketLabel" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+                  <YAxis tickFormatter={(value) => formatCurrency(value)} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
                   <Tooltip
-                    formatter={(value: number, name: string) => [
-                      formatCurrencyFull(value),
-                      name === 'incomeReceived' ? 'Receita' : 'Despesa',
-                    ]}
+                    formatter={(value: number, name: string) => [formatCurrencyFull(value), name === 'incomeReceived' ? 'Receita' : 'Despesa']}
                     labelFormatter={(label) => label}
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--popover))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                    }}
+                    contentStyle={{ backgroundColor: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: '10px', fontSize: '13px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
                   />
-                  <Legend formatter={(value) => (value === 'incomeReceived' ? 'Receita' : 'Despesa')} />
-                  <Bar dataKey="incomeReceived" name="incomeReceived" fill={CHART_COLORS.revenue} radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="expensePaid" name="expensePaid" fill={CHART_COLORS.expenses} radius={[4, 4, 0, 0]} />
+                  <Legend formatter={(value) => (value === 'incomeReceived' ? 'Receita' : 'Despesa')} wrapperStyle={{ fontSize: '12px' }} />
+                  <Bar dataKey="incomeReceived" name="incomeReceived" fill={CHART_COLORS.revenue} radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="expensePaid" name="expensePaid" fill={CHART_COLORS.expenses} radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           ) : (
-            <EmptyPanelState
-              heightClass="h-[280px]"
-              message={
-                isEmptyState
-                  ? 'Nenhum dado importado ainda para compor este grafico.'
-                  : 'Nenhum dado no periodo selecionado'
-              }
-              actionHref={emptyState?.actionHref}
-              actionLabel={emptyState?.actionLabel}
-            />
+            <EmptyPanelState heightClass="h-[300px]" message={isEmptyState ? 'Nenhum dado importado ainda para compor este grafico.' : 'Nenhum dado no periodo selecionado'} actionHref={emptyState?.actionHref} actionLabel={emptyState?.actionLabel} />
           )}
-        </div>
+        </ChartCard>
 
-        <div className="rounded-xl border bg-card p-6 shadow-sm">
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold text-foreground">Evolucao do Lucro</h3>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Lucro (Caixa) por {bucket === 'day' ? 'dia' : bucket === 'week' ? 'semana' : 'mes'}
-              </p>
-            </div>
-          </div>
+        <ChartCard title="Evolucao do Lucro" subtitle={`Lucro (Caixa) por ${bucket === 'day' ? 'dia' : bucket === 'week' ? 'semana' : 'mes'}`}>
           {execData.series.length > 0 ? (
-            <div className="h-[280px]">
+            <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={execData.series} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="bucketLabel" className="text-xs" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
-                  <YAxis tickFormatter={(value) => formatCurrency(value)} className="text-xs" />
-                  <ReferenceLine y={0} stroke="#888" strokeDasharray="3 3" />
+                <AreaChart data={execData.series} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
+                  <defs>
+                    <linearGradient id="profitGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={CHART_COLORS.accent} stopOpacity={0.2} />
+                      <stop offset="95%" stopColor={CHART_COLORS.accent} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} />
+                  <XAxis dataKey="bucketLabel" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+                  <YAxis tickFormatter={(value) => formatCurrency(value)} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+                  <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="3 3" strokeOpacity={0.4} />
                   <Tooltip
                     formatter={(value: number) => [formatCurrencyFull(value), 'Lucro']}
                     labelFormatter={(label) => label}
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--popover))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                    }}
+                    contentStyle={{ backgroundColor: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: '10px', fontSize: '13px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
                   />
-                  <Legend formatter={() => 'Lucro (Caixa)'} />
-                  <Line
-                    type="monotone"
-                    dataKey="profitCash"
-                    name="profitCash"
-                    stroke={CHART_COLORS.accent}
-                    strokeWidth={2.5}
-                    dot={{ fill: CHART_COLORS.accent, strokeWidth: 2 }}
-                    activeDot={{ r: 6 }}
-                  />
-                </LineChart>
+                  <Legend formatter={() => 'Lucro (Caixa)'} wrapperStyle={{ fontSize: '12px' }} />
+                  <Area type="monotone" dataKey="profitCash" name="profitCash" stroke={CHART_COLORS.accent} strokeWidth={2.5} fill="url(#profitGradient)" dot={{ fill: CHART_COLORS.accent, strokeWidth: 2, r: 3 }} activeDot={{ r: 6 }} />
+                </AreaChart>
               </ResponsiveContainer>
             </div>
           ) : (
-            <EmptyPanelState
-              heightClass="h-[280px]"
-              message={
-                isEmptyState
-                  ? 'Nenhum dado importado ainda para acompanhar a evolucao do lucro.'
-                  : 'Nenhum dado no periodo selecionado'
-              }
-              actionHref={emptyState?.actionHref}
-              actionLabel={emptyState?.actionLabel}
-            />
+            <EmptyPanelState heightClass="h-[300px]" message={isEmptyState ? 'Nenhum dado importado ainda para acompanhar a evolucao do lucro.' : 'Nenhum dado no periodo selecionado'} actionHref={emptyState?.actionHref} actionLabel={emptyState?.actionLabel} />
           )}
-        </div>
+        </ChartCard>
       </div>
 
-      <div className="rounded-xl border bg-card p-6 shadow-sm">
-        <div className="mb-4 flex items-center gap-2">
-          <HelpCircle className="h-5 w-5 text-muted-foreground" />
-          <h3 className="font-semibold text-foreground">Por que mudou?</h3>
-          <span className="text-xs text-muted-foreground">Top 5 categorias de despesa vs periodo anterior</span>
-        </div>
+      {/* ── Drivers: Por que mudou? ── */}
+      <ChartCard title="Por que mudou?" subtitle="Top 5 categorias de despesa vs período anterior" icon={<HelpCircle className="h-4 w-4 text-muted-foreground" />}>
         {execData.drivers.length > 0 ? (
           <div className="grid gap-3 md:grid-cols-5">
             {execData.drivers.map((driver, index) => (
-              <div key={driver.categoryId ?? driver.categoryName} className="rounded-lg border bg-muted/20 p-4">
+              <div key={driver.categoryId ?? driver.categoryName} className="rounded-lg border bg-muted/10 p-4 hover:bg-muted/20 transition-colors">
                 <div className="mb-2 flex items-center gap-2">
-                  <div
-                    className="h-3 w-3 rounded-full"
-                    style={{ backgroundColor: CATEGORY_COLORS[index % CATEGORY_COLORS.length] }}
-                  />
-                  <span className="truncate text-sm font-medium text-foreground" title={driver.categoryName}>
-                    {driver.categoryName}
-                  </span>
+                  <div className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: CATEGORY_COLORS[index % CATEGORY_COLORS.length] }} />
+                  <span className="truncate text-xs font-medium text-muted-foreground" title={driver.categoryName}>{driver.categoryName}</span>
                 </div>
-                <p className="text-lg font-bold text-foreground">{formatCurrency(driver.totalPaid)}</p>
-                <div className="mt-1 flex items-center gap-2">
-                  <span
-                    className={`text-xs font-medium ${
-                      (driver.deltaValue ?? 0) > 0
-                        ? 'text-red-600'
-                        : (driver.deltaValue ?? 0) < 0
-                          ? 'text-emerald-600'
-                          : 'text-muted-foreground'
-                    }`}
-                  >
-                    {(driver.deltaValue ?? 0) > 0 ? '+' : ''}
-                    {formatCurrency(driver.deltaValue ?? 0)}
-                  </span>
-                  {driver.deltaPct !== null ? (
-                    <span
-                      className={`text-xs ${
-                        driver.deltaPct > 0
-                          ? 'text-red-500'
-                          : driver.deltaPct < 0
-                            ? 'text-emerald-500'
-                            : 'text-muted-foreground'
-                      }`}
-                    >
-                      ({driver.deltaPct > 0 ? '+' : ''}
-                      {driver.deltaPct.toFixed(1)}%)
-                    </span>
-                  ) : null}
+                <p className="text-lg font-bold text-foreground tracking-tight">{formatCurrency(driver.totalPaid)}</p>
+                <div className="mt-1.5 flex items-center gap-1.5">
+                  <DeltaIndicator value={driver.deltaValue} pct={driver.deltaPct} positiveIsGood={false} />
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <EmptyPanelState
-            compact
-            message={
-              isEmptyState
-                ? 'As categorias de despesa aparecerao aqui assim que os arquivos forem importados.'
-                : 'Nenhuma variacao relevante no periodo selecionado'
-            }
-            actionHref={emptyState?.actionHref}
-            actionLabel={emptyState?.actionLabel}
-          />
+          <EmptyPanelState compact message={isEmptyState ? 'As categorias de despesa aparecerao aqui assim que os arquivos forem importados.' : 'Nenhuma variacao relevante no periodo selecionado'} actionHref={emptyState?.actionHref} actionLabel={emptyState?.actionLabel} />
         )}
-      </div>
+      </ChartCard>
 
+      {/* ── Charts Row 2: Fluxo de Caixa + Top Categorias ── */}
       <div className="grid gap-6 lg:grid-cols-7">
-        <div className="rounded-xl border bg-card p-6 shadow-sm lg:col-span-4">
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold text-foreground">Fluxo de Caixa Diario</h3>
-              <p className="mt-0.5 text-xs text-muted-foreground">Evolucao de receitas, despesas e saldo</p>
-            </div>
-          </div>
-          {cashflow.length > 0 ? (
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={cashflow} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="date" tickFormatter={formatShortDate} className="text-xs" />
-                  <YAxis tickFormatter={(value) => formatCurrency(value)} className="text-xs" />
-                  <Tooltip
-                    formatter={(value: number) => formatCurrencyFull(value)}
-                    labelFormatter={(label) => formatDateDisplay(label)}
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--popover))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                    }}
-                  />
-                  <Legend />
-                  <Line type="monotone" dataKey="revenue" name="Receitas" stroke={CHART_COLORS.revenue} strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="expenses" name="Despesas" stroke={CHART_COLORS.expenses} strokeWidth={2} dot={false} />
-                  <Line
-                    type="monotone"
-                    dataKey="balance"
-                    name="Saldo"
-                    stroke={CHART_COLORS.accent}
-                    strokeWidth={2.5}
-                    strokeDasharray="5 5"
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <EmptyPanelState
-              heightClass="h-[300px]"
-              message={
-                isEmptyState
-                  ? 'O fluxo de caixa diario ficara disponivel depois da primeira importacao.'
-                  : 'Nenhum dado no periodo selecionado'
-              }
-              actionHref={emptyState?.actionHref}
-              actionLabel={emptyState?.actionLabel}
-            />
-          )}
+        <div className="lg:col-span-4">
+          <ChartCard title="Fluxo de Caixa Diario" subtitle="Evolucao de receitas, despesas e saldo">
+            {cashflow.length > 0 ? (
+              <div className="h-[320px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={cashflow} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} />
+                    <XAxis dataKey="date" tickFormatter={formatShortDate} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+                    <YAxis tickFormatter={(value) => formatCurrency(value)} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+                    <Tooltip
+                      formatter={(value: number) => formatCurrencyFull(value)}
+                      labelFormatter={(label) => formatDateDisplay(label)}
+                      contentStyle={{ backgroundColor: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: '10px', fontSize: '13px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: '12px' }} />
+                    <Line type="monotone" dataKey="revenue" name="Receitas" stroke={CHART_COLORS.revenue} strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="expenses" name="Despesas" stroke={CHART_COLORS.expenses} strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="balance" name="Saldo" stroke={CHART_COLORS.accent} strokeWidth={2.5} strokeDasharray="5 5" dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <EmptyPanelState heightClass="h-[320px]" message={isEmptyState ? 'O fluxo de caixa diario ficara disponivel depois da primeira importacao.' : 'Nenhum dado no periodo selecionado'} actionHref={emptyState?.actionHref} actionLabel={emptyState?.actionLabel} />
+            )}
+          </ChartCard>
         </div>
 
-        <div className="rounded-xl border bg-card p-6 shadow-sm lg:col-span-3">
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold text-foreground">Top Categorias</h3>
-              <p className="mt-0.5 text-xs text-muted-foreground">Maiores gastos por categoria</p>
-            </div>
-          </div>
-          {topCategories.length > 0 ? (
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={topCategories} layout="vertical" margin={{ top: 5, right: 30, left: 80, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis type="number" tickFormatter={(value) => formatCurrency(value)} className="text-xs" />
-                  <YAxis type="category" dataKey="category" className="text-xs" width={75} tick={{ fontSize: 11 }} />
-                  <Tooltip
-                    formatter={(value: number) => formatCurrencyFull(value)}
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--popover))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                    }}
-                  />
-                  <Bar dataKey="total" name="Total Gasto" radius={[0, 4, 4, 0]}>
-                    {topCategories.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <EmptyPanelState
-              heightClass="h-[300px]"
-              message={
-                isEmptyState
-                  ? 'As maiores categorias de gasto aparecerao aqui apos a importacao dos arquivos.'
-                  : 'Nenhum dado no periodo selecionado'
-              }
-              actionHref={emptyState?.actionHref}
-              actionLabel={emptyState?.actionLabel}
-            />
-          )}
+        <div className="lg:col-span-3">
+          <ChartCard title="Top Categorias" subtitle="Maiores gastos por categoria">
+            {topCategories.length > 0 ? (
+              <div className="h-[320px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={topCategories} layout="vertical" margin={{ top: 5, right: 10, left: 60, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} />
+                    <XAxis type="number" tickFormatter={(value) => formatCurrency(value)} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+                    <YAxis type="category" dataKey="category" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} width={55} axisLine={false} tickLine={false} />
+                    <Tooltip
+                      formatter={(value: number) => formatCurrencyFull(value)}
+                      contentStyle={{ backgroundColor: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: '10px', fontSize: '13px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+                    />
+                    <Bar dataKey="total" name="Total Gasto" radius={[0, 6, 6, 0]}>
+                      {topCategories.map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <EmptyPanelState heightClass="h-[320px]" message={isEmptyState ? 'As maiores categorias de gasto aparecerao aqui apos a importacao dos arquivos.' : 'Nenhum dado no periodo selecionado'} actionHref={emptyState?.actionHref} actionLabel={emptyState?.actionLabel} />
+            )}
+          </ChartCard>
         </div>
       </div>
     </div>
@@ -778,6 +709,14 @@ function formatDeltaPP(value: number | null | undefined): string {
   return `${sign}${value.toFixed(1)} p.p.`;
 }
 
+const ACCENT_MAP: Record<string, { bg: string; text: string; valueTxt: string }> = {
+  emerald: { bg: 'bg-emerald-500/10', text: 'text-emerald-600', valueTxt: 'text-emerald-600' },
+  red:     { bg: 'bg-red-500/10',     text: 'text-red-600',     valueTxt: 'text-red-600' },
+  blue:    { bg: 'bg-blue-500/10',    text: 'text-blue-600',    valueTxt: 'text-blue-600' },
+  amber:   { bg: 'bg-amber-500/10',   text: 'text-amber-600',   valueTxt: 'text-amber-600' },
+  slate:   { bg: 'bg-[#022D44]/10',   text: 'text-[#022D44]',   valueTxt: '' },
+};
+
 function KPICard({
   title,
   value,
@@ -788,9 +727,8 @@ function KPICard({
   deltaValue,
   deltaPP,
   deltaPositiveIsGood = true,
-  iconBg = 'bg-muted',
-  iconColor = 'text-foreground',
-  valueColor = '',
+  accent = 'slate',
+  featured = false,
 }: {
   title: string;
   value: string;
@@ -801,10 +739,11 @@ function KPICard({
   deltaValue?: number | null;
   deltaPP?: number | null;
   deltaPositiveIsGood?: boolean;
-  iconBg?: string;
-  iconColor?: string;
-  valueColor?: string;
+  accent?: string;
+  featured?: boolean;
 }) {
+  const a = ACCENT_MAP[accent] ?? ACCENT_MAP.slate;
+
   const getDeltaColor = (delta: number | null | undefined) => {
     if (delta === null || delta === undefined) return 'text-muted-foreground';
     if (deltaPositiveIsGood) {
@@ -816,7 +755,7 @@ function KPICard({
   const renderDelta = () => {
     if (deltaPP !== undefined) {
       return (
-        <p className={`mt-1 text-xs ${getDeltaColor(deltaPP)}`}>
+        <p className={`mt-1.5 text-xs ${getDeltaColor(deltaPP)}`}>
           {formatDeltaPP(deltaPP)} vs periodo anterior
         </p>
       );
@@ -824,7 +763,7 @@ function KPICard({
 
     if (deltaPct !== undefined) {
       return (
-        <p className={`mt-1 text-xs ${getDeltaColor(deltaPct)}`}>
+        <p className={`mt-1.5 text-xs ${getDeltaColor(deltaPct)}`}>
           {deltaValue !== undefined && deltaValue !== null ? <span className="mr-1">{formatDeltaValue(deltaValue)}</span> : null}
           <span>({formatDeltaPct(deltaPct)}) vs ant.</span>
         </p>
@@ -835,31 +774,161 @@ function KPICard({
   };
 
   return (
-    <div className="rounded-xl border bg-card p-5 text-card-foreground shadow-sm transition-shadow hover:shadow-md">
+    <div className={`group rounded-xl border bg-card p-5 text-card-foreground shadow-sm transition-all hover:shadow-md ${featured ? 'ring-1 ring-border/60 md:col-span-1' : ''}`}>
       <div className="flex items-start justify-between">
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
             {tooltip ? (
-              <div className="group relative">
-                <Info className="h-3.5 w-3.5 cursor-help text-muted-foreground/60" />
-                <div className="invisible absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 rounded-md border bg-popover px-2 py-1 text-xs whitespace-nowrap text-popover-foreground opacity-0 shadow-lg transition-all group-hover:visible group-hover:opacity-100">
+              <div className="group/tip relative">
+                <Info className="h-3.5 w-3.5 cursor-help text-muted-foreground/50" />
+                <div className="invisible absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 rounded-lg border bg-popover px-3 py-1.5 text-xs whitespace-nowrap text-popover-foreground opacity-0 shadow-lg transition-all group-hover/tip:visible group-hover/tip:opacity-100">
                   {tooltip}
                 </div>
               </div>
             ) : null}
           </div>
-          <p className={`mt-2 text-2xl font-bold ${valueColor}`}>{value}</p>
+          <p className={`mt-2 text-2xl font-bold tracking-tight ${a.valueTxt}`}>{value}</p>
           {renderDelta()}
           {subtext ? (
-            <p className="mt-1 flex items-center gap-1 text-xs text-amber-600">
+            <p className="mt-1.5 flex items-center gap-1 text-xs text-amber-600">
               <AlertTriangle className="h-3 w-3" />
               {subtext}
             </p>
           ) : null}
         </div>
-        <div className={`rounded-lg p-2.5 ${iconBg} ${iconColor}`}>{icon}</div>
+        <div className={`rounded-lg p-2.5 ${a.bg} ${a.text} transition-transform group-hover:scale-105`}>{icon}</div>
       </div>
     </div>
   );
+}
+
+/* ── Layer Module card ── */
+function LayerModule({
+  title,
+  subtitle,
+  accentColor,
+  icon,
+  children,
+}: {
+  title: string;
+  subtitle: string;
+  accentColor: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={`rounded-xl border-l-4 ${accentColor} border bg-card p-5 shadow-sm`}>
+      <div className="mb-4 flex items-center gap-2">
+        {icon}
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+          <p className="text-[11px] text-muted-foreground">{subtitle}</p>
+        </div>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/* ── Mini KPI for layer modules ── */
+function MiniKPI({
+  label,
+  value,
+  colorClass,
+  icon,
+  highlight = false,
+  subtext,
+}: {
+  label: string;
+  value: string;
+  colorClass: string;
+  icon: React.ReactNode;
+  highlight?: boolean;
+  subtext?: string;
+}) {
+  return (
+    <div className={`rounded-lg p-3 ${highlight ? 'bg-muted/30 ring-1 ring-border/40' : 'bg-muted/10'}`}>
+      <div className="flex items-center gap-1.5 mb-1">
+        <span className={colorClass}>{icon}</span>
+        <span className="text-[11px] text-muted-foreground">{label}</span>
+      </div>
+      <p className={`text-base font-bold tracking-tight ${colorClass}`}>{value}</p>
+      {subtext ? <p className="mt-0.5 text-[10px] text-amber-600">{subtext}</p> : null}
+    </div>
+  );
+}
+
+/* ── Chart card wrapper ── */
+function ChartCard({
+  title,
+  subtitle,
+  icon,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  icon?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border bg-card p-5 shadow-sm">
+      <div className="mb-5 flex items-center gap-2">
+        {icon}
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+          {subtitle ? <p className="text-[11px] text-muted-foreground">{subtitle}</p> : null}
+        </div>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/* ── Quality badge ── */
+function QualityBadge({ label, count, variant }: { label: string; count: number; variant: 'error' | 'warning' | 'neutral' | 'success' }) {
+  const styles: Record<string, string> = {
+    error: 'bg-red-100 text-red-700 border-red-200',
+    warning: 'bg-amber-100 text-amber-700 border-amber-200',
+    neutral: 'bg-muted text-muted-foreground border-border',
+    success: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+  };
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium ${styles[variant]}`}>
+      {label}
+      <span className="font-semibold">{count}</span>
+    </span>
+  );
+}
+
+/* ── Delta indicator for drivers ── */
+function DeltaIndicator({ value, pct, positiveIsGood = true }: { value?: number | null; pct?: number | null; positiveIsGood?: boolean }) {
+  const getColor = (v: number) => {
+    if (positiveIsGood) return v >= 0 ? 'text-emerald-600' : 'text-red-600';
+    return v >= 0 ? 'text-red-600' : 'text-emerald-600';
+  };
+  const getIcon = (v: number) => {
+    if (v > 0) return <ArrowUpRight className="h-3 w-3" />;
+    if (v < 0) return <ArrowDownRight className="h-3 w-3" />;
+    return <Minus className="h-3 w-3" />;
+  };
+
+  return (
+    <>
+      {value !== null && value !== undefined ? (
+        <span className={`inline-flex items-center gap-0.5 text-xs font-medium ${getColor(value)}`}>
+          {getIcon(value)}
+          {formatDeltaValue(value)}
+        </span>
+      ) : null}
+      {pct !== null && pct !== undefined ? (
+        <span className={`text-[11px] ${getColor(pct)}`}>({formatDeltaPct(pct)})</span>
+      ) : null}
+    </>
+  );
+}
+
+/* ── Quality alert check ── */
+function hasQualityAlerts(qs: { REVIEW_REQUIRED: number; WARNING: number; UNKNOWN: number; OK: number }): boolean {
+  return qs.REVIEW_REQUIRED > 0 || qs.WARNING > 0 || qs.UNKNOWN > 0;
 }

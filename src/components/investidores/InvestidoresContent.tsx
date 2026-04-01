@@ -8,6 +8,7 @@ import {
   Car,
   TrendingUp,
   Wrench,
+  Landmark,
 } from 'lucide-react';
 import { DateRangeBadge } from '@/components/ui/DateRangePicker';
 import type { InvestorListResponse } from '@/lib/analytics/investor-metrics';
@@ -41,9 +42,16 @@ export function InvestidoresContent({ data, dateRange, error }: InvestidoresCont
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between p-4 bg-card rounded-xl border shadow-sm">
-        <div className="flex items-center gap-2">
-          <Users className="w-5 h-5 text-muted-foreground" />
-          <span className="font-medium">{data.total} investidores identificados</span>
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <Users className="w-5 h-5 text-muted-foreground" />
+            <span className="font-medium">{data.total} investidores identificados</span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {data.summary.investorsWithFinancialLinks} com vínculo financeiro auditável •
+            {` `}
+            Saídas identificadas: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.summary.identifiedFinancialOutflow)}
+          </p>
         </div>
         <DateRangeBadge from={dateRange.from} to={dateRange.to} />
       </div>
@@ -79,6 +87,20 @@ export function InvestidoresContent({ data, dateRange, error }: InvestidoresCont
                     </span>
                   )}
                 </div>
+                <div className="mt-4 flex items-center gap-2 text-xs">
+                  <div className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-1 text-emerald-700">
+                    <TrendingUp className="w-3 h-3" />
+                    {data.summary.identifiedFinancialOutflow >= 0 && investor.linkedEntryCount > 0
+                      ? `${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(investor.identifiedFinancialOutflow)} identificado`
+                      : 'Sem vínculo financeiro'}
+                  </div>
+                  {investor.linkedEntryCount > 0 ? (
+                    <div className="inline-flex items-center gap-1 rounded-md bg-[#022D44]/10 px-2 py-1 text-[#022D44]">
+                      <Landmark className="w-3 h-3" />
+                      {investor.linkedEntryCount} lançamento(s)
+                    </div>
+                  ) : null}
+                </div>
               </div>
               <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-[#A8CF4C] transition-colors" />
             </div>
@@ -97,7 +119,7 @@ export function InvestidoresContent({ data, dateRange, error }: InvestidoresCont
       </div>
 
       <div className="bg-card rounded-xl border p-4 shadow-sm">
-        <h4 className="font-medium text-sm mb-3">Indicadores operacionais por investidor</h4>
+        <h4 className="font-medium text-sm mb-3">Camadas exibidas por investidor</h4>
         <div className="grid gap-3 md:grid-cols-3">
           <div className="flex items-center gap-2 text-sm">
             <div className="p-1.5 rounded-md bg-emerald-500/10">
@@ -113,9 +135,9 @@ export function InvestidoresContent({ data, dateRange, error }: InvestidoresCont
           </div>
           <div className="flex items-center gap-2 text-sm">
             <div className="p-1.5 rounded-md bg-amber-500/10">
-              <AlertTriangle className="w-4 h-4 text-amber-600" />
+              <Landmark className="w-4 h-4 text-amber-600" />
             </div>
-            <span className="text-muted-foreground">Multas e alertas de qualidade</span>
+            <span className="text-muted-foreground">Financeiro identificado e custos não alocados</span>
           </div>
         </div>
       </div>

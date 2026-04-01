@@ -14,12 +14,23 @@ async function InvestidoresSection({ searchParams }: InvestidoresPageProps) {
   const dateRange = parseDateRangeFromSearchParams(searchParams);
 
   try {
-    const data = await getInvestorList(db);
+    const data = await getInvestorList(db, dateRange);
     return <InvestidoresContent data={data} dateRange={dateRange} />;
   } catch (error) {
     return (
       <InvestidoresContent
-        data={{ investors: [], total: 0 }}
+        data={{
+          investors: [],
+          total: 0,
+          summary: {
+            investorsWithFinancialLinks: 0,
+            identifiedFinancialInflow: 0,
+            identifiedFinancialOutflow: 0,
+            corporateUnallocatedRevenue: 0,
+            corporateUnallocatedExpense: 0,
+          },
+          dateRange,
+        }}
         dateRange={dateRange}
         error={error instanceof Error ? error.message : 'Falha ao carregar investidores'}
       />

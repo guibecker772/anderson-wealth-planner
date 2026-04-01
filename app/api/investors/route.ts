@@ -8,12 +8,17 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getInvestorList } from '@/lib/analytics/investor-metrics';
+import { parseDateRangeFromSearchParams } from '@/lib/dateRange';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url);
+    const dateRange = parseDateRangeFromSearchParams({
+      from: searchParams.get('from') || undefined,
+      to: searchParams.get('to') || undefined,
+    });
     const { db } = await import('@/lib/db');
-    const result = await getInvestorList(db);
+    const result = await getInvestorList(db, dateRange);
     return NextResponse.json(result);
   } catch (error) {
     console.error('[api/investors] Error:', error);

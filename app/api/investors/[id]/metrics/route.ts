@@ -23,8 +23,26 @@ export async function GET(
   if (!process.env.DATABASE_URL) {
     return NextResponse.json({
       investor: null,
-      totals: { rentalIncome: 0, maintenanceCost: 0, finesCost: 0, netResult: 0 },
+      totals: {
+        operationalRevenue: 0,
+        operationalCost: 0,
+        operationalFines: 0,
+        operationalDiscount: 0,
+        operationalResult: 0,
+        identifiedFinancialInflow: 0,
+        identifiedFinancialOutflow: 0,
+        identifiedFinancialNet: 0,
+        expandedResult: 0,
+      },
       vehicles: [],
+      financialLinks: [],
+      allocationSummary: {
+        linkedEntryCount: 0,
+        linkedRevenueCount: 0,
+        linkedExpenseCount: 0,
+        linkageCoverageNote: '',
+        excludedFromInvestorResult: [],
+      },
       dateRange: { from, to },
       error: 'Database not configured',
     });
@@ -48,8 +66,26 @@ export async function GET(
     return NextResponse.json(
       { 
         investor: null,
-        totals: { rentalIncome: 0, maintenanceCost: 0, finesCost: 0, netResult: 0 },
+        totals: {
+          operationalRevenue: 0,
+          operationalCost: 0,
+          operationalFines: 0,
+          operationalDiscount: 0,
+          operationalResult: 0,
+          identifiedFinancialInflow: 0,
+          identifiedFinancialOutflow: 0,
+          identifiedFinancialNet: 0,
+          expandedResult: 0,
+        },
         vehicles: [],
+        financialLinks: [],
+        allocationSummary: {
+          linkedEntryCount: 0,
+          linkedRevenueCount: 0,
+          linkedExpenseCount: 0,
+          linkageCoverageNote: '',
+          excludedFromInvestorResult: [],
+        },
         dateRange: { from, to },
         error: (error as Error).message 
       },

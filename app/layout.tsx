@@ -3,7 +3,9 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { Sidebar } from '@/lib/components/layout/Sidebar';
 import { Topbar } from '@/lib/components/layout/Topbar';
+import { DateRangeProvider } from '@/lib/components/DateRangeContext';
 import { cn } from '@/lib/utils';
+import { Suspense } from 'react';
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -41,14 +43,18 @@ export default function RootLayout({
         inter.variable,
         "min-h-screen bg-background antialiased"
       )}>
-        <Sidebar />
-        <Topbar />
-        {/* Main content area - offset by sidebar (ml-64) and header (pt-16 = 64px) */}
-        <main className="ml-64 pt-16 p-6 lg:p-8 min-h-screen relative z-0">
-          <div className="max-w-7xl mx-auto animate-in">
-            {children}
-          </div>
-        </main>
+        <Suspense>
+          <DateRangeProvider>
+            <Sidebar />
+            <Topbar />
+            {/* Main content area - offset by sidebar (ml-64) and header (pt-20 = 80px = 64px header + 16px space) */}
+            <main className="ml-64 pt-20 px-6 pb-6 lg:px-8 lg:pb-8 min-h-screen relative z-0">
+              <div className="max-w-7xl mx-auto animate-in">
+                {children}
+              </div>
+            </main>
+          </DateRangeProvider>
+        </Suspense>
       </body>
     </html>
   );
