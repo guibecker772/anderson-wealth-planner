@@ -36,7 +36,7 @@ const navGroups: NavGroup[] = [
       { href: '/dashboard', label: 'Visão Geral', icon: LayoutDashboard },
       { href: '/investidores', label: 'Investidores', icon: Users },
       { href: '/multas', label: 'Multas', icon: AlertTriangle },
-      { href: '/frota', label: 'Frota / Operação', icon: Truck, disabled: true, badge: 'Em breve' },
+      { href: '/frota', label: 'Frota / Operação', icon: Truck },
     ],
   },
   {
@@ -85,7 +85,7 @@ export function Sidebar() {
               <span className="text-white">Clik</span>
               <span className="text-[#A8CF4C]">Finance</span>
             </span>
-            <p className="mt-0.5 text-[10px] uppercase tracking-[0.1em] text-white/82">Control Center</p>
+            <p className="mt-0.5 text-[10px] uppercase tracking-[0.1em] text-[#A8CF4C]/90">Control Center</p>
           </div>
         </Link>
       </div>
@@ -93,7 +93,7 @@ export function Sidebar() {
       <nav className="relative flex-1 space-y-6 overflow-y-auto px-3 pb-4 pt-2 scrollbar-none">
         {navGroups.map((group) => (
           <div key={group.label}>
-            <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#A8CF4C]">
+            <p className="mb-3 px-3 text-[11px] font-bold uppercase tracking-[0.06em] text-[#A8CF4C]">
               {group.label}
             </p>
             <div className="space-y-1.5">
@@ -105,12 +105,12 @@ export function Sidebar() {
                   return (
                     <div
                       key={item.href}
-                      className="flex cursor-not-allowed items-center gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.03] px-3 py-3 text-[13px] font-medium text-white/80"
+                      className="flex cursor-not-allowed items-center gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-3 py-3 text-[13px] font-medium text-white/90"
                     >
-                      <Icon className="h-[18px] w-[18px] shrink-0 text-white/80" />
+                      <Icon className="h-[18px] w-[18px] shrink-0 text-white/90" />
                       <span className="flex-1">{item.label}</span>
                       {item.badge ? (
-                        <span className="rounded-full bg-white/[0.12] px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[0.12em] text-white/90">
+                        <span className="rounded-full bg-white/[0.14] px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-white">
                           {item.badge}
                         </span>
                       ) : null}
@@ -154,7 +154,7 @@ export function Sidebar() {
               <span className="font-medium text-white">ClikFinance</span> v1.0.0
             </span>
           </div>
-          <p className="mt-2 text-[11px] leading-5 text-white/85">
+          <p className="mt-2 text-[11px] leading-5 text-white/90">
             Camadas operacional, financeira e multas sincronizadas no mesmo cockpit.
           </p>
         </div>

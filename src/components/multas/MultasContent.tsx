@@ -124,7 +124,7 @@ export function MultasContent() {
   }
 
   const isPositiveDelta = summary?.deltaValue != null && summary.deltaValue >= 0;
-  const deltaColor = isPositiveDelta ? 'text-red-600' : 'text-emerald-600';
+  const deltaColor = isPositiveDelta ? 'delta-negative' : 'delta-positive';
   const DeltaIcon = isPositiveDelta ? TrendingUp : TrendingDown;
 
   return (
@@ -246,7 +246,7 @@ export function MultasContent() {
                     <div className="text-xs text-slate-500">{fine.counterparty || 'Sem orgao'}</div>
                   </td>
                   <td className="px-6 py-4">{fine.driver || '-'}</td>
-                  <td className="table-number px-6 py-4 font-medium text-amber-700">{formatCurrencyFull(fine.amount)}</td>
+                  <td className="table-number px-6 py-4 font-medium value-expense">{formatCurrencyFull(fine.amount)}</td>
                   <td className="px-6 py-4">
                     <Badge variant={fine.status === 'PAGO' ? 'success' : fine.status === 'ABERTA' ? 'warning' : 'info'} size="sm">
                       {fine.status}

@@ -15,11 +15,14 @@ const pageInfo: Record<string, { title: string; subtitle: string }> = {
   '/relatorios': { title: 'Relatórios', subtitle: 'Importações e qualidade' },
   '/configuracoes': { title: 'Configurações', subtitle: 'Importação e sistema' },
   '/categorias': { title: 'Categorias', subtitle: 'Normalização e ranking' },
+  '/frota': { title: 'Frota / Operação', subtitle: 'Veículos e controle operacional' },
 };
 
 export function Topbar() {
   const pathname = usePathname();
-  const info = pageInfo[pathname] || { title: 'ClikFinance', subtitle: 'Gestão financeira' };
+  const info = pageInfo[pathname]
+    || (pathname.startsWith('/frota/') ? { title: 'Detalhe do Veículo', subtitle: 'Histórico operacional' } : null)
+    || { title: 'ClikFinance', subtitle: 'Gestão financeira' };
 
   return (
     <header

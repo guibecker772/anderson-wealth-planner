@@ -396,6 +396,23 @@
     font-variant-numeric: tabular-nums lining-nums;
   }
 
+  /* ── Semantic value colors — single source of truth ── */
+  .value-income {
+    @apply text-emerald-700;
+  }
+  .value-expense {
+    @apply text-red-700;
+  }
+  .value-neutral {
+    @apply text-slate-900;
+  }
+  .delta-positive {
+    @apply text-emerald-600;
+  }
+  .delta-negative {
+    @apply text-red-600;
+  }
+
   .text-ui-primary {
     @apply text-slate-900;
   }

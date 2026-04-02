@@ -38,6 +38,8 @@ export function TransactionTable({ data, page, totalPages, type }: TransactionTa
     router.push(`?${params.toString()}`);
   };
 
+  const valueClass = type === 'RECEIVABLE' ? 'value-income' : 'value-expense';
+
   return (
     <div className="space-y-4">
       <div className="card-premium overflow-hidden">
@@ -99,10 +101,10 @@ export function TransactionTable({ data, page, totalPages, type }: TransactionTa
                       <span className="text-slate-400">—</span>
                     )}
                   </TableCell>
-                  <TableCell className="table-number py-4 text-right font-medium text-slate-900">
+                  <TableCell className={`table-number py-4 text-right font-medium ${valueClass}`}>
                     {formatCurrency(Number(tx.plannedAmount))}
                   </TableCell>
-                  <TableCell className="table-number py-4 text-right font-medium text-slate-900">
+                  <TableCell className={`table-number py-4 text-right font-medium ${valueClass}`}>
                     {tx.actualAmount ? formatCurrency(Number(tx.actualAmount)) : <span className="text-slate-400">—</span>}
                   </TableCell>
                   <TableCell className="py-4">

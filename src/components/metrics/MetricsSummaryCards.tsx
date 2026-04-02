@@ -39,7 +39,7 @@ export function MetricsSummaryCards({ scope, data }: MetricsCardsProps) {
 
   const realizedLabel = isIncome ? 'Recebido no período' : 'Pago no período';
   const pendingLabel = isIncome ? 'A receber no período' : 'A pagar no período';
-  const primaryColorClass = isIncome ? 'text-emerald-700' : 'text-red-700';
+  const primaryColorClass = isIncome ? 'value-income' : 'value-expense';
 
   return (
     <div className="space-y-4">
@@ -71,7 +71,7 @@ export function MetricsSummaryCards({ scope, data }: MetricsCardsProps) {
           count={overdueCount}
           icon={<AlertTriangle className="h-5 w-5" />}
           iconTone={overdue > 0 ? 'red' : 'slate'}
-          valueClass={overdue > 0 ? 'text-red-700' : ''}
+          valueClass={overdue > 0 ? 'value-expense' : ''}
         />
 
         <MetricCard
@@ -127,8 +127,8 @@ function MetricCard({
     deltaPct === null || deltaPct === undefined
       ? 'text-slate-400'
       : deltaPositiveIsGood
-        ? deltaPct >= 0 ? 'text-emerald-600' : 'text-red-600'
-        : deltaPct >= 0 ? 'text-red-600' : 'text-emerald-600';
+        ? deltaPct >= 0 ? 'delta-positive' : 'delta-negative'
+        : deltaPct >= 0 ? 'delta-negative' : 'delta-positive';
 
   return (
     <div className="card-premium bg-gradient-to-br from-white via-white to-slate-50/80 p-5">

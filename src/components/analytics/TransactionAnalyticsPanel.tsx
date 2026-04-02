@@ -61,8 +61,8 @@ export function TransactionAnalyticsPanel({ scope, dateRange, data }: Transactio
   const isPositiveDelta = summary.deltaValue >= 0;
   const deltaColor =
     scope === 'income'
-      ? isPositiveDelta ? 'text-emerald-600' : 'text-red-600'
-      : isPositiveDelta ? 'text-red-600' : 'text-emerald-600';
+      ? isPositiveDelta ? 'delta-positive' : 'delta-negative'
+      : isPositiveDelta ? 'delta-negative' : 'delta-positive';
   const DeltaIcon = isPositiveDelta ? TrendingUp : TrendingDown;
   const chartTitle = scope === 'income' ? 'Fluxo de receitas' : 'Fluxo de despesas';
   const rankingTitle = scope === 'income' ? 'Maiores entradas' : 'Maiores saídas';
@@ -103,7 +103,7 @@ export function TransactionAnalyticsPanel({ scope, dateRange, data }: Transactio
           <div className="chart-panel px-4 py-5 sm:px-6">
             {series.length > 0 ? (
               <div className="h-[280px]">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height={280}>
                 <LineChart data={series} margin={{ top: 8, right: 10, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" />
                   <XAxis dataKey="date" tickFormatter={formatShortDate} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
@@ -136,7 +136,7 @@ export function TransactionAnalyticsPanel({ scope, dateRange, data }: Transactio
           <div className="chart-panel px-4 py-5 sm:px-6">
             {ranking.length > 0 ? (
               <div className="h-[280px]">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={ranking} layout="vertical" margin={{ top: 8, right: 10, left: 15, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" />
                   <XAxis type="number" tickFormatter={(v) => formatCurrency(v)} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />

@@ -101,10 +101,10 @@ export function InvestorDetailContent({ data, dateRange, error }: InvestorDetail
                         {warningCount > 0 ? <Badge variant="warning" size="sm">{warningCount} alerta(s)</Badge> : null}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-right text-emerald-700">{formatCurrencyFull(vehicle.rentalIncome)}</td>
-                    <td className="px-6 py-4 text-right text-sky-700">{formatCurrencyFull(vehicle.maintenanceCost)}</td>
-                    <td className="px-6 py-4 text-right text-amber-700">{formatCurrencyFull(vehicle.finesCost)}</td>
-                    <td className={`px-6 py-4 text-right font-medium ${vehicle.netResult >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>{formatCurrencyFull(vehicle.netResult)}</td>
+                    <td className="px-6 py-4 text-right value-income">{formatCurrencyFull(vehicle.rentalIncome)}</td>
+                    <td className="px-6 py-4 text-right value-expense">{formatCurrencyFull(vehicle.maintenanceCost)}</td>
+                    <td className="px-6 py-4 text-right value-expense">{formatCurrencyFull(vehicle.finesCost)}</td>
+                    <td className={`px-6 py-4 text-right font-medium ${vehicle.netResult >= 0 ? 'value-income' : 'value-expense'}`}>{formatCurrencyFull(vehicle.netResult)}</td>
                   </tr>
                 );
               })}
@@ -151,7 +151,7 @@ export function InvestorDetailContent({ data, dateRange, error }: InvestorDetail
                       <div>{link.ruleLabel}</div>
                       <div className="text-xs text-slate-500">{link.rationale}</div>
                     </td>
-                    <td className={`px-6 py-4 text-right font-medium ${link.direction === 'OUTFLOW' ? 'text-amber-700' : 'text-emerald-700'}`}>
+                    <td className={`px-6 py-4 text-right font-medium ${link.direction === 'OUTFLOW' ? 'value-expense' : 'value-income'}`}>
                       {formatCurrencyFull(link.amount)}
                     </td>
                   </tr>

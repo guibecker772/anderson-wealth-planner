@@ -877,8 +877,8 @@ function PulseItem({
   const color = delta == null
     ? 'text-slate-400'
     : positiveIsGood
-      ? delta >= 0 ? 'text-emerald-600' : 'text-red-600'
-      : delta >= 0 ? 'text-red-600' : 'text-emerald-600';
+      ? delta >= 0 ? 'delta-positive' : 'delta-negative'
+      : delta >= 0 ? 'delta-negative' : 'delta-positive';
 
   return (
     <div className="rounded-[22px] border border-white/80 bg-white/88 p-4 shadow-[0_20px_45px_-32px_rgba(15,23,42,0.3)]">
@@ -924,8 +924,8 @@ function KPIBandCard({
   const deltaColor = deltaPct == null
     ? 'text-slate-400'
     : deltaPositiveIsGood
-      ? deltaPct >= 0 ? 'text-emerald-600' : 'text-red-600'
-      : deltaPct >= 0 ? 'text-red-600' : 'text-emerald-600';
+      ? deltaPct >= 0 ? 'delta-positive' : 'delta-negative'
+      : deltaPct >= 0 ? 'delta-negative' : 'delta-positive';
 
   return (
     <div className={`card-premium bg-gradient-to-br ${accents} p-5`}>
@@ -1101,8 +1101,8 @@ function QualityBadge({ label, count, variant }: { label: string; count: number;
 
 function DeltaIndicator({ value, pct, positiveIsGood = true }: { value?: number | null; pct?: number | null; positiveIsGood?: boolean }) {
   const getColor = (v: number) => {
-    if (positiveIsGood) return v >= 0 ? 'text-emerald-600' : 'text-red-600';
-    return v >= 0 ? 'text-red-600' : 'text-emerald-600';
+    if (positiveIsGood) return v >= 0 ? 'delta-positive' : 'delta-negative';
+    return v >= 0 ? 'delta-negative' : 'delta-positive';
   };
   const getIcon = (v: number) => {
     if (v > 0) return <ArrowUpRight className="h-3 w-3" />;
