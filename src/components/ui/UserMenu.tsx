@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { User, Database, Upload, Activity, X, Server } from 'lucide-react';
+import { useSession, signOut } from 'next-auth/react';
+import { User, Database, Upload, Activity, X, Server, LogOut } from 'lucide-react';
 
 interface SystemStatus {
   environment: string;
@@ -13,6 +14,7 @@ interface SystemStatus {
 }
 
 export function UserMenu() {
+  const { data: session } = useSession();
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -146,6 +148,23 @@ export function UserMenu() {
             </div>
           ) : (
             <div className="p-4 text-center text-xs text-muted-foreground">Indisponível</div>
+          )}
+
+          {/* Auth info */}
+          {session?.user && (
+            <div className="border-t border-border/40 px-4 py-3 flex items-center justify-between">
+              <div className="min-w-0">
+                <p className="text-sm font-medium truncate">{session.user.name}</p>
+                <p className="text-xs text-muted-foreground truncate">{session.user.email}</p>
+              </div>
+              <button
+                onClick={() => signOut({ callbackUrl: '/login' })}
+                className="flex-shrink-0 p-2 rounded-lg text-muted-foreground hover:bg-red-50 hover:text-red-600 transition-colors"
+                title="Sair"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
           )}
         </div>
       )}

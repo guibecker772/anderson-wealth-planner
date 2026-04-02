@@ -98,6 +98,11 @@ enum NormalizationScope {
   BOTH
 }
 
+enum UserRole {
+  ADMIN
+  INVESTOR
+}
+
 enum CategorySource {
   RAW
   NORMALIZED
@@ -242,11 +247,53 @@ model Investor {
   normalizedName       String                @unique
   rawAliases           Json?
   operationalSnapshots OperationalSnapshot[]
+  users                User[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([displayName])
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         UserRole @default(INVESTOR)
+  investorId   String?
+  active       Boolean  @default(true)
+  firstLogin   Boolean  @default(true)
+  investor     Investor? @relation(fields: [investorId], references: [id], onDelete: SetNull)
+  auditLogsAsActor  AuditLog[] @relation("AuditActor")
+  auditLogsAsTarget AuditLog[] @relation("AuditTarget")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([role])
+  @@index([investorId])
+}
+
+model AuditLog {
+  id               String   @id @default(cuid())
+  action           String
+  actorUserId      String?
+  actorRole        String?
+  targetUserId     String?
+  targetInvestorId String?
+  metadata         Json?
+  ip               String?
+  userAgent        String?
+  actorUser        User?    @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  targetUser       User?    @relation("AuditTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([action])
+  @@index([actorUserId])
+  @@index([targetUserId])
+  @@index([createdAt])
 }
 
 model Vehicle {

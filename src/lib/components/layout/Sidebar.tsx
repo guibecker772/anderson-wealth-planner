@@ -10,6 +10,7 @@ import {
   FileText,
   LayoutDashboard,
   Settings,
+  ShieldCheck,
   TrendingUp,
   Truck,
   type LucideIcon,
@@ -49,7 +50,10 @@ const navGroups: NavGroup[] = [
   },
   {
     label: 'Sistema',
-    items: [{ href: '/configuracoes', label: 'Configurações', icon: Settings }],
+    items: [
+      { href: '/configuracoes/usuarios', label: 'Gestão de Acessos', icon: ShieldCheck },
+      { href: '/configuracoes', label: 'Configurações', icon: Settings },
+    ],
   },
 ];
 

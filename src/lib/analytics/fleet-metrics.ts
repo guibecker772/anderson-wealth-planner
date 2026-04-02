@@ -180,11 +180,12 @@ function deriveCurrentStatus(
 export async function getFleetData(
   db: PrismaClient,
   dateRange: DateRangeStrings,
+  investorId?: string,
 ): Promise<FleetResponse> {
   const dateFilter = dateRangeToDbFilter(dateRange);
 
   const snapshots = await db.operationalSnapshot.findMany({
-    where: { referenceDate: dateFilter },
+    where: { referenceDate: dateFilter, ...(investorId ? { investorId } : {}) },
     select: {
       plate: true,
       model: true,
@@ -302,11 +303,12 @@ export async function getVehicleDetail(
   db: PrismaClient,
   plate: string,
   dateRange: DateRangeStrings,
+  investorId?: string,
 ): Promise<VehicleDetailResponse | null> {
   const dateFilter = dateRangeToDbFilter(dateRange);
 
   const snapshots = await db.operationalSnapshot.findMany({
-    where: { plate, referenceDate: dateFilter },
+    where: { plate, referenceDate: dateFilter, ...(investorId ? { investorId } : {}) },
     select: {
       id: true,
       referenceDate: true,
@@ -469,16 +471,17 @@ export async function getVehicleDetailV2(
   db: PrismaClient,
   plate: string,
   dateRange: DateRangeStrings,
+  investorId?: string,
 ): Promise<VehicleDetailV2Response | null> {
   // 1. Get base V1 data
-  const base = await getVehicleDetail(db, plate, dateRange);
+  const base = await getVehicleDetail(db, plate, dateRange, investorId);
   if (!base) return null;
 
   // 2. Previous period comparison
   const prevRange = computePreviousRange(dateRange);
   const prevDateFilter = dateRangeToDbFilter(prevRange);
   const prevSnaps = await db.operationalSnapshot.findMany({
-    where: { plate, referenceDate: prevDateFilter },
+    where: { plate, referenceDate: prevDateFilter, ...(investorId ? { investorId } : {}) },
     select: {
       referenceDate: true,
       weekOfMonth: true,
@@ -558,7 +561,7 @@ export async function getVehicleDetailV2(
 
   // 5. Neighbor plates (prev/next in sorted list for the period)
   const allPlates = await db.operationalSnapshot.findMany({
-    where: { referenceDate: dateRangeToDbFilter(dateRange) },
+    where: { referenceDate: dateRangeToDbFilter(dateRange), ...(investorId ? { investorId } : {}) },
     select: { plate: true },
     distinct: ['plate'],
     orderBy: { plate: 'asc' },
