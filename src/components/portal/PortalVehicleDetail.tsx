@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   AlertTriangle,
   ArrowLeft,
@@ -27,6 +27,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Legend,
 } from 'recharts';
 import { Badge } from '@/components/ui/badge';
+import { DateRangePicker } from '@/components/ui/DateRangePicker';
 import type {
   VehicleDetailV2Response,
   VehicleSnapshotRow,
@@ -141,18 +142,14 @@ function exportSnapshotsCSV(snapshots: VehicleSnapshotRow[], plate: string, date
 // ---------------------------------------------------------------------------
 
 export function PortalVehicleDetail({ plate }: { plate: string }) {
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
+  const searchParamsKey = searchParams.toString();
   const from = searchParams.get('from');
   const to = searchParams.get('to');
   const impersonateId = searchParams.get('_as');
-
-  const dateRange = useMemo(() => {
-    const now = new Date();
-    return {
-      from: from || new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0],
-      to: to || new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0],
-    };
-  }, [from, to]);
+  const hasExplicitRange = Boolean(from && to);
 
   const [data, setData] = useState<VehicleDetailV2Response | null>(null);
   const [loading, setLoading] = useState(true);
@@ -160,12 +157,21 @@ export function PortalVehicleDetail({ plate }: { plate: string }) {
   const [snapshotFilter, setSnapshotFilter] = useState<SnapshotFilter>('all');
   const [snapshotSearch, setSnapshotSearch] = useState('');
 
+  const dateRange = useMemo(
+    () => data?.dateRange ?? (from && to ? { from, to } : null),
+    [data?.dateRange, from, to],
+  );
+
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
       setError(null);
       try {
-        const params = new URLSearchParams({ from: dateRange.from, to: dateRange.to });
+        const params = new URLSearchParams();
+        if (from && to) {
+          params.set('from', from);
+          params.set('to', to);
+        }
         if (impersonateId) params.set('_as', impersonateId);
         const res = await fetch(`/api/portal/fleet/${encodeURIComponent(plate)}?${params.toString()}`);
         if (res.status === 401) { setError('Sessão expirada.'); return; }
@@ -174,6 +180,12 @@ export function PortalVehicleDetail({ plate }: { plate: string }) {
         if (!res.ok) throw new Error('Falha ao carregar dados');
         const json: VehicleDetailV2Response = await res.json();
         setData(json);
+        if (!hasExplicitRange && json.dateRange) {
+          const nextParams = new URLSearchParams(searchParamsKey);
+          nextParams.set('from', json.dateRange.from);
+          nextParams.set('to', json.dateRange.to);
+          router.replace(`${pathname}?${nextParams.toString()}`);
+        }
       } catch (err) {
         setError((err as Error).message);
       } finally {
@@ -181,20 +193,22 @@ export function PortalVehicleDetail({ plate }: { plate: string }) {
       }
     }
     fetchData();
-  }, [plate, dateRange.from, dateRange.to, impersonateId]);
+  }, [plate, from, to, hasExplicitRange, impersonateId, pathname, router, searchParamsKey]);
 
   const filteredSnapshots = useMemo(
     () => (data ? filterSnapshots(data.snapshots, snapshotFilter, snapshotSearch) : []),
     [data, snapshotFilter, snapshotSearch],
   );
 
-  const backHref = impersonateId ? `/portal?_as=${impersonateId}` : '/portal';
+  const backHref = dateRange
+    ? `/portal?from=${dateRange.from}&to=${dateRange.to}${impersonateId ? `&_as=${impersonateId}` : ''}`
+    : (impersonateId ? `/portal?_as=${impersonateId}` : '/portal');
 
   if (loading) {
     return <div className="flex h-[400px] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-slate-400" /></div>;
   }
 
-  if (error || !data) {
+  if (error || !data || !dateRange) {
     return (
       <div className="space-y-4">
         <Link href={backHref} className="inline-flex items-center gap-1.5 text-sm font-medium text-[#022D44]/70 hover:text-[#022D44] transition-colors">
@@ -214,11 +228,12 @@ export function PortalVehicleDetail({ plate }: { plate: string }) {
   return (
     <div className="space-y-6">
       {/* ── Navigation ── */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <Link href={backHref} className="inline-flex items-center gap-1.5 text-sm font-medium text-[#022D44]/70 hover:text-[#022D44] transition-colors">
           <ArrowLeft className="h-4 w-4" /> Voltar ao painel
         </Link>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <DateRangePicker />
           {neighbors.prev && (
             <Link href={`/portal/veiculos/${encodeURIComponent(neighbors.prev)}?from=${dateRange.from}&to=${dateRange.to}${impersonateId ? `&_as=${impersonateId}` : ''}`} className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50">
               <ChevronLeft className="h-3.5 w-3.5" /> {neighbors.prev}

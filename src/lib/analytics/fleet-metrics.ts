@@ -12,6 +12,9 @@ export interface FleetKPIs {
   totalSnapshots: number;
   operationalRevenueReceived: number;
   operationalCost: number;
+  maintenanceCost: number;
+  lateFeeCost: number;
+  discountCost: number;
   amountToCharge: number;
   openAmount: number;
   operationalResult: number;
@@ -32,6 +35,9 @@ export interface FleetVehicleRow {
   snapshotCount: number;
   revenueReceived: number;
   operationalCost: number;
+  maintenanceCost: number;
+  lateFeeCost: number;
+  discountCost: number;
   amountToCharge: number;
   openAmount: number;
   operationalResult: number;
@@ -219,6 +225,9 @@ export async function getFleetData(
   const statusCounter = new Map<string, number>();
   let totalRevenue = 0;
   let totalCost = 0;
+  let totalMaintenance = 0;
+  let totalLateFee = 0;
+  let totalDiscount = 0;
   let totalToCharge = 0;
   let totalOpen = 0;
 
@@ -233,6 +242,9 @@ export async function getFleetData(
     const weekSet = new Set<string>();
     let revenue = 0;
     let cost = 0;
+    let maintenanceCost = 0;
+    let lateFeeCost = 0;
+    let discountCost = 0;
     let charge = 0;
     let open = 0;
     const quality = emptyQuality();
@@ -241,8 +253,14 @@ export async function getFleetData(
       const weekKey = `${s.referenceDate.getFullYear()}-${s.referenceDate.getMonth()}-${s.weekOfMonth ?? 0}`;
       weekSet.add(weekKey);
 
+      const maintenance = toNumber(s.maintenanceByDriverAmount);
+      const lateFee = toNumber(s.lateFeeAmount);
+      const discount = toNumber(s.discountAmount);
       revenue += toNumber(s.amountPaidWeek);
-      cost += toNumber(s.maintenanceByDriverAmount) + toNumber(s.lateFeeAmount) + toNumber(s.discountAmount);
+      maintenanceCost += maintenance;
+      lateFeeCost += lateFee;
+      discountCost += discount;
+      cost += maintenance + lateFee + discount;
       charge += toNumber(s.amountToCharge);
       open += toNumber(s.openAmount);
 
@@ -259,6 +277,9 @@ export async function getFleetData(
       snapshotCount: plateSnaps.length,
       revenueReceived: round2(revenue),
       operationalCost: round2(cost),
+      maintenanceCost: round2(maintenanceCost),
+      lateFeeCost: round2(lateFeeCost),
+      discountCost: round2(discountCost),
       amountToCharge: round2(charge),
       openAmount: round2(open),
       operationalResult: round2(revenue - cost),
@@ -269,6 +290,9 @@ export async function getFleetData(
 
     totalRevenue += revenue;
     totalCost += cost;
+    totalMaintenance += maintenanceCost;
+    totalLateFee += lateFeeCost;
+    totalDiscount += discountCost;
     totalToCharge += charge;
     totalOpen += open;
   }
@@ -286,6 +310,9 @@ export async function getFleetData(
     totalSnapshots: snapshots.length,
     operationalRevenueReceived: round2(totalRevenue),
     operationalCost: round2(totalCost),
+    maintenanceCost: round2(totalMaintenance),
+    lateFeeCost: round2(totalLateFee),
+    discountCost: round2(totalDiscount),
     amountToCharge: round2(totalToCharge),
     openAmount: round2(totalOpen),
     operationalResult: round2(totalRevenue - totalCost),

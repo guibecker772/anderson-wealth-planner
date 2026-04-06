@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, isAuthError } from '@/lib/auth-utils';
 import { getVehicleDetailV2 } from '@/lib/analytics/fleet-metrics';
+import { resolvePortalDateRange } from '@/lib/portalDateRange';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +14,6 @@ export async function GET(
 
   const { searchParams } = new URL(req.url);
 
-  // Determine investorId: INVESTOR uses own; ADMIN can use _as param
   let investorId: string | null = null;
   if (auth.role === 'INVESTOR') {
     investorId = auth.investorId;
@@ -22,23 +22,22 @@ export async function GET(
   }
 
   if (!investorId) {
-    return NextResponse.json({ error: 'Investidor não vinculado' }, { status: 403 });
+    return NextResponse.json({ error: 'Investidor nao vinculado' }, { status: 403 });
   }
 
   const plate = decodeURIComponent(params.placa);
-  const from = searchParams.get('from');
-  const to = searchParams.get('to');
-
-  const now = new Date();
-  const defaultFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-  const defaultTo = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
-  const dateRange = { from: from || defaultFrom, to: to || defaultTo };
 
   try {
     const { db } = await import('@/lib/db');
+    const dateRange = await resolvePortalDateRange(db, {
+      investorId,
+      plate,
+      from: searchParams.get('from'),
+      to: searchParams.get('to'),
+    });
     const data = await getVehicleDetailV2(db, plate, dateRange, investorId);
     if (!data) {
-      return NextResponse.json({ error: 'Veículo não encontrado' }, { status: 404 });
+      return NextResponse.json({ error: 'Veiculo nao encontrado no periodo' }, { status: 404 });
     }
     return NextResponse.json(data);
   } catch (err) {

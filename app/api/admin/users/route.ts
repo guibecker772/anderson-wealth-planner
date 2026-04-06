@@ -3,6 +3,7 @@ import { hash } from 'bcryptjs';
 import { requireAdmin, isAuthError } from '@/lib/auth-utils';
 import { db } from '@/lib/db';
 import { audit, extractIp, extractUserAgent } from '@/lib/audit';
+import { hasValidProvisionalPassword, isValidUserEmail, normalizeUserEmail } from '@/lib/admin/userValidation';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,11 +59,14 @@ export async function POST(req: NextRequest) {
   if (!email?.trim()) {
     return NextResponse.json({ error: 'Email é obrigatório' }, { status: 400 });
   }
-  if (!password || password.length < 6) {
+  if (!password || !hasValidProvisionalPassword(password)) {
     return NextResponse.json({ error: 'Senha deve ter pelo menos 6 caracteres' }, { status: 400 });
   }
 
-  const normalizedEmail = email.trim().toLowerCase();
+  const normalizedEmail = normalizeUserEmail(email);
+  if (!isValidUserEmail(normalizedEmail)) {
+    return NextResponse.json({ error: 'Email inválido' }, { status: 400 });
+  }
   const validRoles = ['ADMIN', 'INVESTOR'] as const;
   const userRole = validRoles.includes(role as typeof validRoles[number])
     ? (role as typeof validRoles[number])

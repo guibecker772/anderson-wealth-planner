@@ -3,6 +3,7 @@ import { hash } from 'bcryptjs';
 import { requireAdmin, isAuthError } from '@/lib/auth-utils';
 import { db } from '@/lib/db';
 import { audit, extractIp, extractUserAgent } from '@/lib/audit';
+import { hasValidProvisionalPassword, isValidUserEmail, normalizeUserEmail } from '@/lib/admin/userValidation';
 
 export const dynamic = 'force-dynamic';
 
@@ -78,9 +79,12 @@ export async function PATCH(
 
   // Email
   if (email !== undefined) {
-    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedEmail = normalizeUserEmail(email);
     if (!normalizedEmail) {
       return NextResponse.json({ error: 'Email não pode ser vazio' }, { status: 400 });
+    }
+    if (!isValidUserEmail(normalizedEmail)) {
+      return NextResponse.json({ error: 'Email inválido' }, { status: 400 });
     }
     if (normalizedEmail !== existingUser.email) {
       const dup = await db.user.findUnique({ where: { email: normalizedEmail } });
@@ -141,7 +145,7 @@ export async function PATCH(
 
   // Password reset
   if (password !== undefined) {
-    if (password.length < 6) {
+    if (!hasValidProvisionalPassword(password)) {
       return NextResponse.json({ error: 'Senha deve ter pelo menos 6 caracteres' }, { status: 400 });
     }
     data.passwordHash = await hash(password, 12);

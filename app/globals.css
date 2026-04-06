@@ -126,6 +126,15 @@
   }
 }
 
+/* ── Scrollbar utilities ── */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -469,6 +478,11 @@
       linear-gradient(to bottom, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
     background-size: 24px 24px;
   }
+
+  .portal-report-section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
 }
 
 /* ==========================================================================
@@ -518,4 +532,31 @@
   .shadow-popover {
     box-shadow: var(--shadow-popover);
   }
+}
+
+@media print {
+  html,
+  body {
+    background: #ffffff !important;
+  }
+
+  .portal-report-page {
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+
+  .portal-report-actions {
+    display: none !important;
+  }
+
+  .portal-report-sheet {
+    margin: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+}
+
+@page {
+  size: A4 landscape;
+  margin: 12mm;
 }
