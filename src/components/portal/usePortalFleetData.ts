@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import type { FleetResponse } from '@/lib/analytics/fleet-metrics';
+import { usePortalDateRange } from '@/components/portal/PortalDateRangeContext';
 
 export function usePortalFleetData() {
   const { data: session } = useSession();
@@ -19,14 +20,18 @@ export function usePortalFleetData() {
   const investorName = isImpersonating
     ? 'Investidor (visualizacao admin)'
     : (session?.user?.investorName || session?.user?.name || 'Investidor');
+  const {
+    dateRange: globalDateRange,
+    syncResolvedDateRange,
+  } = usePortalDateRange();
 
   const [data, setData] = useState<FleetResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const dateRange = useMemo(
-    () => data?.dateRange ?? (from && to ? { from, to } : null),
-    [data?.dateRange, from, to],
+    () => globalDateRange ?? data?.dateRange ?? (from && to ? { from, to } : null),
+    [data?.dateRange, from, globalDateRange, to],
   );
 
   useEffect(() => {
@@ -56,10 +61,7 @@ export function usePortalFleetData() {
         setData(json);
 
         if (!hasExplicitRange && json.dateRange) {
-          const nextParams = new URLSearchParams(searchParamsKey);
-          nextParams.set('from', json.dateRange.from);
-          nextParams.set('to', json.dateRange.to);
-          router.replace(`${pathname}?${nextParams.toString()}`);
+          syncResolvedDateRange(json.dateRange);
         }
       } catch (err) {
         setError((err as Error).message);
@@ -69,7 +71,7 @@ export function usePortalFleetData() {
     }
 
     fetchData();
-  }, [from, to, impersonateId, hasExplicitRange, pathname, router, searchParamsKey]);
+  }, [from, to, impersonateId, hasExplicitRange, pathname, router, searchParamsKey, syncResolvedDateRange]);
 
   return {
     data,

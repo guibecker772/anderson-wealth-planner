@@ -108,6 +108,7 @@ export async function GET(request: NextRequest) {
     const page = await context.newPage();
     page.setDefaultNavigationTimeout(45000);
     page.setDefaultTimeout(45000);
+    await page.emulateMedia({ media: 'print' });
 
     const response = await page.goto(reportUrl.toString(), {
       waitUntil: 'networkidle',
@@ -119,6 +120,10 @@ export async function GET(request: NextRequest) {
         { status: 502 },
       );
     }
+
+    await page.waitForFunction(() => document.documentElement.dataset.reportReady === 'true', undefined, {
+      timeout: 45000,
+    });
 
     const pdf = await page.pdf({
       printBackground: true,

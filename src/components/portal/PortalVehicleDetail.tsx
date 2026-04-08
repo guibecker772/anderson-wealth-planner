@@ -27,13 +27,14 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Legend,
 } from 'recharts';
 import { Badge } from '@/components/ui/badge';
-import { DateRangePicker } from '@/components/ui/DateRangePicker';
+import { PageHero } from '@/components/ui/PageHero';
 import type {
   VehicleDetailV2Response,
   VehicleSnapshotRow,
   PeriodComparison,
   WeeklyEvolutionPoint,
 } from '@/lib/analytics/fleet-metrics';
+import { usePortalDateRange } from '@/components/portal/PortalDateRangeContext';
 
 // ---------------------------------------------------------------------------
 // Formatters
@@ -150,6 +151,7 @@ export function PortalVehicleDetail({ plate }: { plate: string }) {
   const to = searchParams.get('to');
   const impersonateId = searchParams.get('_as');
   const hasExplicitRange = Boolean(from && to);
+  const { syncResolvedDateRange } = usePortalDateRange();
 
   const [data, setData] = useState<VehicleDetailV2Response | null>(null);
   const [loading, setLoading] = useState(true);
@@ -181,10 +183,7 @@ export function PortalVehicleDetail({ plate }: { plate: string }) {
         const json: VehicleDetailV2Response = await res.json();
         setData(json);
         if (!hasExplicitRange && json.dateRange) {
-          const nextParams = new URLSearchParams(searchParamsKey);
-          nextParams.set('from', json.dateRange.from);
-          nextParams.set('to', json.dateRange.to);
-          router.replace(`${pathname}?${nextParams.toString()}`);
+          syncResolvedDateRange(json.dateRange);
         }
       } catch (err) {
         setError((err as Error).message);
@@ -193,7 +192,7 @@ export function PortalVehicleDetail({ plate }: { plate: string }) {
       }
     }
     fetchData();
-  }, [plate, from, to, hasExplicitRange, impersonateId, pathname, router, searchParamsKey]);
+  }, [plate, from, to, hasExplicitRange, impersonateId, pathname, router, searchParamsKey, syncResolvedDateRange]);
 
   const filteredSnapshots = useMemo(
     () => (data ? filterSnapshots(data.snapshots, snapshotFilter, snapshotSearch) : []),
@@ -224,16 +223,47 @@ export function PortalVehicleDetail({ plate }: { plate: string }) {
 
   const { kpis, snapshots, comparison, weeklyEvolution, neighbors } = data;
   const alertCount = kpis.qualitySummary.WARNING + kpis.qualitySummary.REVIEW_REQUIRED;
+  const heroMeta = (
+    <>
+      <Badge variant={getStatusVariant(data.currentStatus)} size="sm">{data.currentStatus}</Badge>
+      {alertCount > 0 ? <Badge variant="warning" size="sm">{alertCount} alerta(s)</Badge> : <Badge variant="success" size="sm">Base monitorada</Badge>}
+      <Badge variant="secondary" size="sm">{kpis.snapshotCount} snapshot(s)</Badge>
+    </>
+  );
+  const heroActions = (
+    <>
+      <Link href={backHref} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-[#022D44]/80 transition-colors hover:bg-slate-50 hover:text-[#022D44]">
+        <ArrowLeft className="h-4 w-4" /> Voltar ao painel
+      </Link>
+      {neighbors.prev ? (
+        <Link href={`/portal/veiculos/${encodeURIComponent(neighbors.prev)}?from=${dateRange.from}&to=${dateRange.to}${impersonateId ? `&_as=${impersonateId}` : ''}`} className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50">
+          <ChevronLeft className="h-3.5 w-3.5" /> {neighbors.prev}
+        </Link>
+      ) : null}
+      {neighbors.next ? (
+        <Link href={`/portal/veiculos/${encodeURIComponent(neighbors.next)}?from=${dateRange.from}&to=${dateRange.to}${impersonateId ? `&_as=${impersonateId}` : ''}`} className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50">
+          {neighbors.next} <ChevronRight className="h-3.5 w-3.5" />
+        </Link>
+      ) : null}
+    </>
+  );
 
   return (
     <div className="space-y-6">
+      <PageHero
+        eyebrow="Frota / Operacoes"
+        title={data.plate}
+        description={`${data.model || 'Veiculo monitorado'}${data.driver ? ` • ${data.driver}` : ''} • Periodo ${formatDate(dateRange.from)} - ${formatDate(dateRange.to)}.`}
+        accent="blue"
+        meta={heroMeta}
+        actions={heroActions}
+      />
       {/* ── Navigation ── */}
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <div className="hidden flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <Link href={backHref} className="inline-flex items-center gap-1.5 text-sm font-medium text-[#022D44]/70 hover:text-[#022D44] transition-colors">
           <ArrowLeft className="h-4 w-4" /> Voltar ao painel
         </Link>
         <div className="flex flex-wrap items-center gap-2">
-          <DateRangePicker />
           {neighbors.prev && (
             <Link href={`/portal/veiculos/${encodeURIComponent(neighbors.prev)}?from=${dateRange.from}&to=${dateRange.to}${impersonateId ? `&_as=${impersonateId}` : ''}`} className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50">
               <ChevronLeft className="h-3.5 w-3.5" /> {neighbors.prev}
@@ -248,7 +278,7 @@ export function PortalVehicleDetail({ plate }: { plate: string }) {
       </div>
 
       {/* ── Vehicle header ── */}
-      <div className="rounded-2xl border border-slate-200/70 bg-white p-6 shadow-sm">
+      <div className="hidden rounded-2xl border border-slate-200/70 bg-white p-6 shadow-sm">
         <div className="flex items-center gap-3">
           <Car className="h-6 w-6 text-[#022D44]" />
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 font-mono">{data.plate}</h1>

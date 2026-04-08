@@ -11,6 +11,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { PortalReportAnnex } from '@/components/portal/PortalReportAnnex';
 import { PortalReportActions } from '@/components/portal/PortalReportActions';
 import { getFleetData, type FleetStatusCount } from '@/lib/analytics/fleet-metrics';
 import { getSessionUser } from '@/lib/auth-utils';
@@ -27,13 +28,6 @@ function formatCurrency(value: number): string {
     currency: 'BRL',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(value);
-}
-
-function formatCurrencyFull(value: number): string {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
   }).format(value);
 }
 
@@ -146,62 +140,66 @@ export default async function PortalReportPage({ searchParams }: Props) {
 
         <div className="portal-report-sheet space-y-6">
           <section className="report-page--portrait report-cover overflow-hidden rounded-[34px] border border-slate-200/80 bg-white shadow-[0_28px_80px_rgba(15,23,42,0.08)]">
-            <div className="report-page-shell report-cover-shell flex min-h-[940px] flex-col justify-between px-10 py-10 text-white">
-              <div className="space-y-14">
-                <div className="flex items-start justify-between gap-6">
-                  <div className="space-y-5">
-                  <Image src="/brand/clikcar-signature.svg" alt="Clik Car" width={184} height={52} className="h-11 w-auto" unoptimized />
-                    <div className="inline-flex rounded-full border border-white/20 bg-white/8 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/72">
-                      ClikFinance
+            <div className="report-page-shell flex min-h-[940px] flex-col">
+              <div className="report-cover-hero px-10 py-10 text-white">
+                <div className="space-y-14">
+                  <div className="flex items-start justify-between gap-6">
+                    <div className="space-y-5">
+                      <Image src="/brand/clikcar-signature.svg" alt="Clik Car" width={184} height={52} className="h-11 w-auto" unoptimized />
+                      <div className="inline-flex rounded-full border border-white/20 bg-white/8 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/72">
+                        ClikFinance
+                      </div>
+                    </div>
+
+                    <div className="rounded-[24px] border border-white/12 bg-white/7 px-5 py-4 text-right backdrop-blur-sm">
+                      <p className="text-[11px] uppercase tracking-[0.18em] text-white/60">Relatório gerado em</p>
+                      <p className="mt-2 text-sm font-medium text-white/88">{generatedAt}</p>
                     </div>
                   </div>
 
-                  <div className="rounded-[24px] border border-white/12 bg-white/7 px-5 py-4 text-right backdrop-blur-sm">
-                    <p className="text-[11px] uppercase tracking-[0.18em] text-white/60">Relatório gerado em</p>
-                    <p className="mt-2 text-sm font-medium text-white/88">{generatedAt}</p>
+                  <div className="max-w-3xl space-y-6">
+                    <p className="text-[12px] font-semibold uppercase tracking-[0.28em] text-[#a4d65e]">
+                      Relatório individual do investidor
+                    </p>
+                    <h1 className="max-w-2xl text-5xl font-semibold leading-[1.04] tracking-tight">
+                      Performance institucional da carteira.
+                    </h1>
+                    <p className="max-w-2xl text-lg leading-8 text-white/78">
+                      Visão executiva da operação da frota, leitura financeira do período e consolidado analítico por veículo.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="report-cover-content flex flex-1 flex-col justify-between gap-8 bg-white px-10 py-10 text-slate-900">
+                <div className="grid gap-6 rounded-[32px] border border-slate-200/80 bg-white p-8 text-slate-900 lg:grid-cols-[1.08fr_0.92fr]">
+                  <div className="space-y-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Carteira</p>
+                    <h2 className="text-3xl font-semibold tracking-tight">{investorName}</h2>
+                    <p className="max-w-xl text-sm leading-7 text-slate-500">
+                      Documento preparado para acompanhamento institucional da carteira do investidor, com foco em resultado operacional, saúde da frota e anexo analítico de apoio.
+                    </p>
+                  </div>
+
+                  <div className="grid gap-4 rounded-[28px] border border-slate-200/80 bg-slate-50/90 p-6 sm:grid-cols-2">
+                    <ReportMetaCard label="Período" value={periodLabel} />
+                    <ReportMetaCard label="Gerado em" value={generatedAt} />
+                    <ReportMetaCard label="Veículos" value={`${fleet.kpis.totalVehicles} placa(s)`} />
+                    <ReportMetaCard label="Snapshots" value={`${fleet.kpis.totalSnapshots} leitura(s)`} />
                   </div>
                 </div>
 
-                <div className="max-w-3xl space-y-6">
-                  <p className="text-[12px] font-semibold uppercase tracking-[0.28em] text-[#a4d65e]">
-                    Relatório individual do investidor
-                  </p>
-                  <h1 className="max-w-2xl text-5xl font-semibold leading-[1.04] tracking-tight">
-                    Performance institucional da carteira.
-                  </h1>
-                  <p className="max-w-2xl text-lg leading-8 text-white/78">
-                    Visão executiva da operação da frota, leitura financeira do período e consolidado analítico por veículo.
-                  </p>
-                </div>
+                <ReportFooter brand="ClikFinance / ClikCar" meta="Documento confidencial de acompanhamento da carteira" />
               </div>
-
-              <div className="grid gap-6 rounded-[32px] border border-white/10 bg-white/96 p-8 text-slate-900 lg:grid-cols-[1.08fr_0.92fr]">
-                <div className="space-y-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Carteira</p>
-                  <h2 className="text-3xl font-semibold tracking-tight">{investorName}</h2>
-                  <p className="max-w-xl text-sm leading-7 text-slate-500">
-                    Documento preparado para acompanhamento institucional da carteira do investidor, com foco em resultado operacional, saúde da frota e anexo analítico de apoio.
-                  </p>
-                </div>
-
-                <div className="grid gap-4 rounded-[28px] border border-slate-200/80 bg-slate-50/90 p-6 sm:grid-cols-2">
-                  <ReportMetaCard label="Período" value={periodLabel} />
-                  <ReportMetaCard label="Gerado em" value={generatedAt} />
-                  <ReportMetaCard label="Veículos" value={`${fleet.kpis.totalVehicles} placa(s)`} />
-                  <ReportMetaCard label="Snapshots" value={`${fleet.kpis.totalSnapshots} leitura(s)`} />
-                </div>
-              </div>
-
-              <ReportFooter brand="ClikFinance / ClikCar" meta="Documento confidencial de acompanhamento da carteira" />
             </div>
           </section>
 
           <section className="report-page--portrait report-executive overflow-hidden rounded-[34px] border border-slate-200/80 bg-white shadow-[0_28px_80px_rgba(15,23,42,0.08)]">
-            <div className="report-page-shell space-y-8 px-10 py-10">
+            <div className="report-page-shell report-page-shell--executive space-y-8 px-10 py-10">
               <ReportPageHeader title="Painel Executivo" meta={periodLabel} accent="Resultado operacional do período" />
 
               <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-                <div className="rounded-[32px] border border-[#a4d65e]/30 bg-[linear-gradient(180deg,#13344a_0%,#0f2439_100%)] p-8 text-white shadow-[0_18px_48px_rgba(15,36,57,0.2)]">
+                <div className="report-executive-hero rounded-[32px] border border-[#a4d65e]/30 bg-[linear-gradient(180deg,#13344a_0%,#0f2439_100%)] p-8 text-white shadow-[0_18px_48px_rgba(15,36,57,0.2)]">
                   <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-white/55">Resultado Operacional Líquido</p>
                   <div className="mt-8 flex items-end justify-between gap-6">
                     <div>
@@ -242,7 +240,7 @@ export default async function PortalReportPage({ searchParams }: Props) {
                 </div>
               </div>
 
-              <div className="grid gap-5 rounded-[28px] border border-slate-200/80 bg-slate-50/80 p-6 lg:grid-cols-[1.15fr_0.85fr]">
+              <div className="report-executive-summary grid gap-5 rounded-[28px] border border-slate-200/80 bg-slate-50/80 p-6 lg:grid-cols-[1.15fr_0.85fr]">
                 <div className="space-y-3">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Leitura executiva</p>
                   <p className="text-sm leading-7 text-slate-600">
@@ -270,7 +268,7 @@ export default async function PortalReportPage({ searchParams }: Props) {
           </section>
 
           <section className="report-page--portrait report-fleet-health overflow-hidden rounded-[34px] border border-slate-200/80 bg-white shadow-[0_28px_80px_rgba(15,23,42,0.08)]">
-            <div className="report-page-shell space-y-7 px-10 py-10">
+            <div className="report-page-shell report-page-shell--fleet space-y-7 px-10 py-10">
               <ReportPageHeader title="Saúde da Frota e Alertas" meta={periodLabel} accent="Distribuição operacional, alertas e destaques da carteira" />
 
               <div className="grid gap-6 xl:grid-cols-[0.74fr_1.26fr]">
@@ -372,147 +370,99 @@ export default async function PortalReportPage({ searchParams }: Props) {
                 </div>
               </div>
 
-              <section className="portal-report-section space-y-4">
-                <div className="flex items-center gap-3">
-                  <Car className="h-5 w-5 text-[#0f2439]" />
-                  <div>
-                    <h3 className="text-lg font-semibold tracking-tight text-slate-900">Destaques da frota</h3>
-                    <p className="text-sm text-slate-500">Top performers da carteira com melhor leitura consolidada do período.</p>
-                  </div>
-                </div>
-
-                <div className={`report-featured-grid grid gap-4 ${featuredGridClass}`}>
-                  {report.featuredVehicles.map((vehicle) => {
-                    const media = getVehicleImageMeta(vehicle.model);
-                    const qualityLabel = getQualityLabel(vehicle.qualitySummary.WARNING, vehicle.qualitySummary.REVIEW_REQUIRED);
-                    const useGraphicFallback = isGenericVehicleMedia(media.src);
-
-                    return (
-                      <article key={vehicle.plate} className="portal-report-vehicle-card report-vehicle-card overflow-hidden rounded-[22px] border border-slate-200/80 bg-white">
-                        <div className="report-vehicle-media relative flex h-28 items-center justify-center overflow-hidden border-b border-slate-200/80 bg-[linear-gradient(180deg,#eef3f7,#dde8ef)] px-5 py-3">
-                          <div className="absolute left-4 top-4 rounded-full border border-white/70 bg-white/90 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-600">
-                            {media.label}
-                          </div>
-                          {useGraphicFallback ? (
-                            <div className="report-vehicle-fallback flex h-full w-full max-w-[13.5rem] items-center justify-center rounded-[20px] border border-slate-200/70 bg-white/70">
-                              <div className="text-center">
-                                <Car className="mx-auto h-7 w-7 text-[#0f2439]/70" />
-                                <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Veículo da carteira</p>
-                              </div>
-                            </div>
-                          ) : (
-                            <Image
-                              src={media.src}
-                              alt={media.label}
-                              width={220}
-                              height={96}
-                              unoptimized
-                              className="h-full w-auto max-w-full object-contain"
-                            />
-                          )}
-                        </div>
-
-                        <div className="report-vehicle-body space-y-4 p-5">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0">
-                              <p className="font-mono text-lg font-semibold tracking-tight text-slate-900">{vehicle.plate}</p>
-                              <p className="mt-1 line-clamp-1 text-sm text-slate-500">{vehicle.model || media.label}</p>
-                              <p className="report-vehicle-print-label mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                                {media.label}
-                              </p>
-                            </div>
-                            <StatusPill status={vehicle.currentStatus} />
-                          </div>
-
-                          <div className="space-y-2 text-sm">
-                            <ReportInfoRow label="Locatário" value={vehicle.driver || 'Não identificado no período'} />
-                            <ReportInfoRow label="Recebido" value={formatCurrency(vehicle.revenueReceived)} tone="green" />
-                            <ReportInfoRow label="Custos" value={formatCurrency(vehicle.operationalCost)} tone="red" />
-                            <ReportInfoRow
-                              label="Resultado"
-                              value={formatCurrency(vehicle.operationalResult)}
-                              tone={vehicle.operationalResult >= 0 ? 'green' : 'red'}
-                            />
-                          </div>
-
-                          <div className="flex items-center justify-between text-xs text-slate-500">
-                            <span>{vehicle.snapshotCount} snapshot(s)</span>
-                            <QualityPill
-                              warning={vehicle.qualitySummary.WARNING}
-                              reviewRequired={vehicle.qualitySummary.REVIEW_REQUIRED}
-                              label={qualityLabel}
-                            />
-                          </div>
-                        </div>
-                      </article>
-                    );
-                  })}
-                </div>
-              </section>
-
               <ReportFooter brand="Saúde da frota" meta={investorName} />
             </div>
           </section>
 
-          <section className="report-page--landscape report-annex overflow-hidden rounded-[34px] border border-slate-200/80 bg-white shadow-[0_28px_80px_rgba(15,23,42,0.08)]">
-            <div className="report-page-shell report-annex-shell space-y-4 px-8 py-7">
-              <ReportPageHeader title="Anexo Analítico da Carteira" meta={periodLabel} accent={`${report.tableVehicles.length} veículo(s) detalhados no período`} compact />
+          {report.featuredVehicles.length > 0 ? (
+            <section className="report-page--portrait report-featured-page overflow-hidden rounded-[34px] border border-slate-200/80 bg-white shadow-[0_28px_80px_rgba(15,23,42,0.08)]">
+              <div className="report-page-shell report-page-shell--fleet space-y-5 px-10 py-10">
+                <ReportPageHeader title="Destaques da Frota" meta={periodLabel} accent="Top performers da carteira no período" />
 
-              <div className="report-annex-table-wrap overflow-hidden rounded-[20px] border border-slate-300/80">
-                <table className="report-table portal-report-table report-annex-table w-full table-fixed text-sm">
-                  <colgroup>
-                    <col className="w-[9%]" />
-                    <col className="w-[21%]" />
-                    <col className="w-[13%]" />
-                    <col className="w-[12%]" />
-                    <col className="w-[12%]" />
-                    <col className="w-[12%]" />
-                    <col className="w-[12%]" />
-                    <col className="w-[9%]" />
-                  </colgroup>
-                  <thead>
-                    <tr>
-                      <th className="px-4 py-3 text-left">Placa</th>
-                      <th className="px-4 py-3 text-left">Modelo</th>
-                      <th className="px-4 py-3 text-left">Status</th>
-                      <th className="px-4 py-3 text-right">Recebido</th>
-                      <th className="px-4 py-3 text-right">Custos</th>
-                      <th className="px-4 py-3 text-right">A cobrar</th>
-                      <th className="px-4 py-3 text-right">Resultado</th>
-                      <th className="px-4 py-3 text-left">Qualidade</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {report.tableVehicles.map((vehicle) => (
-                      <tr key={vehicle.plate}>
-                        <td className="px-4 py-3 font-mono font-semibold text-[#0f2439]">{vehicle.plate}</td>
-                        <td className="px-4 py-3 text-slate-700">{vehicle.model || 'Modelo não identificado'}</td>
-                        <td className="px-4 py-3">
-                          <StatusPill status={vehicle.currentStatus} compact />
-                        </td>
-                        <td className="px-4 py-3 text-right font-medium text-emerald-700">{formatCurrencyFull(vehicle.revenueReceived)}</td>
-                        <td className="px-4 py-3 text-right font-medium text-red-700">{formatCurrencyFull(vehicle.operationalCost)}</td>
-                        <td className="px-4 py-3 text-right font-medium text-amber-700">{formatCurrencyFull(vehicle.amountToCharge)}</td>
-                        <td className={`px-4 py-3 text-right font-semibold ${vehicle.operationalResult >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
-                          {formatCurrencyFull(vehicle.operationalResult)}
-                        </td>
-                        <td className="px-4 py-3">
-                          <QualityPill
-                            warning={vehicle.qualitySummary.WARNING}
-                            reviewRequired={vehicle.qualitySummary.REVIEW_REQUIRED}
-                            label={getQualityLabel(vehicle.qualitySummary.WARNING, vehicle.qualitySummary.REVIEW_REQUIRED)}
-                            compact
-                          />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <section className="portal-report-section report-featured-section space-y-4">
+                  <div className="report-section-heading flex items-center gap-3">
+                    <Car className="h-5 w-5 text-[#0f2439]" />
+                    <div>
+                      <h3 className="text-lg font-semibold tracking-tight text-slate-900">Destaques da frota</h3>
+                      <p className="text-sm text-slate-500">Veículos com melhor leitura operacional e financeira no período.</p>
+                    </div>
+                  </div>
+
+                  <div className={`report-featured-grid grid gap-4 ${featuredGridClass}`}>
+                    {report.featuredVehicles.map((vehicle) => {
+                      const media = getVehicleImageMeta(vehicle.model);
+                      const qualityLabel = getQualityLabel(vehicle.qualitySummary.WARNING, vehicle.qualitySummary.REVIEW_REQUIRED);
+                      const useGraphicFallback = isGenericVehicleMedia(media.src);
+
+                      return (
+                        <article key={vehicle.plate} className="portal-report-vehicle-card report-vehicle-card overflow-hidden rounded-[22px] border border-slate-200/80 bg-white">
+                          <div className="report-vehicle-media relative flex h-28 items-center justify-center overflow-hidden border-b border-slate-200/80 bg-[linear-gradient(180deg,#eef3f7,#dde8ef)] px-5 py-3">
+                            <div className="absolute left-4 top-4 rounded-full border border-white/70 bg-white/90 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-600">
+                              {media.label}
+                            </div>
+                            {useGraphicFallback ? (
+                              <div className="report-vehicle-fallback flex h-full w-full max-w-[13.5rem] items-center justify-center rounded-[20px] border border-slate-200/70 bg-white/70">
+                                <div className="text-center">
+                                  <Car className="mx-auto h-7 w-7 text-[#0f2439]/70" />
+                                  <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Veículo da carteira</p>
+                                </div>
+                              </div>
+                            ) : (
+                              <Image
+                                src={media.src}
+                                alt={media.label}
+                                width={220}
+                                height={96}
+                                unoptimized
+                                className="h-full w-auto max-w-full object-contain"
+                              />
+                            )}
+                          </div>
+
+                          <div className="report-vehicle-body space-y-4 p-5">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="font-mono text-lg font-semibold tracking-tight text-slate-900">{vehicle.plate}</p>
+                                <p className="mt-1 line-clamp-1 text-sm text-slate-500">{vehicle.model || media.label}</p>
+                                <p className="report-vehicle-print-label mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                                  {media.label}
+                                </p>
+                              </div>
+                              <StatusPill status={vehicle.currentStatus} />
+                            </div>
+
+                            <div className="space-y-2 text-sm">
+                              <ReportInfoRow label="Locatário" value={vehicle.driver || 'Não identificado no período'} />
+                              <ReportInfoRow label="Recebido" value={formatCurrency(vehicle.revenueReceived)} tone="green" />
+                              <ReportInfoRow label="Custos" value={formatCurrency(vehicle.operationalCost)} tone="red" />
+                              <ReportInfoRow
+                                label="Resultado"
+                                value={formatCurrency(vehicle.operationalResult)}
+                                tone={vehicle.operationalResult >= 0 ? 'green' : 'red'}
+                              />
+                            </div>
+
+                            <div className="flex items-center justify-between text-xs text-slate-500">
+                              <span>{vehicle.snapshotCount} snapshot(s)</span>
+                              <QualityPill
+                                warning={vehicle.qualitySummary.WARNING}
+                                reviewRequired={vehicle.qualitySummary.REVIEW_REQUIRED}
+                                label={qualityLabel}
+                              />
+                            </div>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                </section>
+
+                <ReportFooter brand="Destaques da frota" meta={investorName} />
               </div>
+            </section>
+          ) : null}
 
-              <ReportFooter brand="Anexo analítico" meta={investorName} />
-            </div>
-          </section>
+          <PortalReportAnnex vehicles={report.tableVehicles} periodLabel={periodLabel} investorName={investorName} />
         </div>
       </div>
     </div>
@@ -531,7 +481,7 @@ function ReportPageHeader({
   compact?: boolean;
 }) {
   return (
-    <div className={`border-b border-slate-200/80 ${compact ? 'pb-4' : 'pb-6'}`}>
+    <div className={`report-page-header border-b border-slate-200/80 ${compact ? 'pb-4' : 'pb-6'}`}>
       <div className="flex items-start justify-between gap-6">
         <div className="space-y-2">
           <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-slate-400">{title}</p>
@@ -548,7 +498,7 @@ function ReportPageHeader({
 
 function ReportFooter({ brand, meta }: { brand: string; meta: string }) {
   return (
-    <div className="flex items-center justify-between border-t border-slate-200/70 pt-5 text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">
+    <div className="report-footer flex items-center justify-between border-t border-slate-200/70 pt-5 text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">
       <span>{brand}</span>
       <span>{meta}</span>
     </div>

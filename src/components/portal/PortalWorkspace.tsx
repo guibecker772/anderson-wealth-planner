@@ -19,7 +19,6 @@ import {
 } from 'lucide-react';
 import { PageHero } from '@/components/ui/PageHero';
 import { Badge } from '@/components/ui/badge';
-import { DateRangePicker } from '@/components/ui/DateRangePicker';
 import type { FleetVehicleRow } from '@/lib/analytics/fleet-metrics';
 import { getVehicleImageMeta } from '@/lib/portalVehicleMedia';
 import { usePortalFleetData } from './usePortalFleetData';
@@ -313,7 +312,7 @@ export function PortalWorkspace({ section }: { section: PortalSection }) {
         </div>
       ) : null}
 
-      <PageHero eyebrow={copy.eyebrow} title={copy.title} description={copy.description} accent={copy.accent} meta={heroMeta} actions={<DateRangePicker />} />
+      <PageHero eyebrow={copy.eyebrow} title={copy.title} description={copy.description} accent={copy.accent} meta={heroMeta} />
 
       {section === 'overview' ? (
         <>
