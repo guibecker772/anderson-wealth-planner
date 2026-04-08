@@ -483,6 +483,147 @@
     break-inside: avoid;
     page-break-inside: avoid;
   }
+
+  .portal-report-print-page {
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .portal-report-print-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  .portal-report-table thead {
+    display: table-header-group;
+  }
+
+  .portal-report-table tfoot {
+    display: table-footer-group;
+  }
+
+  .portal-report-table tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .portal-report-vehicle-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .report-page--portrait {
+    page: reportPortrait;
+  }
+
+  .report-page--landscape {
+    page: reportLandscape;
+  }
+
+  .report-cover,
+  .report-executive,
+  .report-fleet-health,
+  .report-annex,
+  .report-alert-group,
+  .report-donut,
+  .report-table tr,
+  .portal-report-vehicle-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .report-cover,
+  .report-executive,
+  .report-fleet-health,
+  .report-annex {
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .report-annex:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  .report-table {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .report-table thead {
+    display: table-header-group;
+  }
+
+  .report-table thead th {
+    background: #072b40;
+    color: #ffffff;
+  }
+
+  .report-table tbody tr:nth-child(odd) {
+    background: #ffffff;
+  }
+
+  .report-table tbody tr:nth-child(even) {
+    background: #f8fafc;
+  }
+
+  .report-table tfoot {
+    display: table-footer-group;
+  }
+
+  .report-page-shell {
+    min-height: 100%;
+  }
+
+  .report-cover-shell {
+    background:
+      radial-gradient(circle at top left, rgba(164, 214, 94, 0.16), transparent 22%),
+      linear-gradient(180deg, #0f2439 0%, #13344a 58%, #f4f6f8 58%, #ffffff 100%);
+  }
+
+  .report-vehicle-card {
+    box-shadow: 0 12px 28px -24px rgba(15, 23, 42, 0.28);
+  }
+
+  .report-annex-shell {
+    min-height: 720px;
+  }
+
+  .report-annex-table-wrap {
+    background: #ffffff;
+  }
+
+  .report-annex-table th,
+  .report-annex-table td {
+    vertical-align: middle;
+  }
+
+  .report-annex-table td:nth-child(2) {
+    word-break: break-word;
+  }
+
+  .report-featured-grid {
+    align-items: stretch;
+  }
+
+  .report-vehicle-media {
+    min-height: 7rem;
+  }
+
+  .report-vehicle-body {
+    min-height: 0;
+  }
+
+  .report-vehicle-print-label {
+    display: none;
+  }
+
+  .report-cover .report-page-shell,
+  .report-executive .report-page-shell,
+  .report-fleet-health .report-page-shell,
+  .report-annex .report-page-shell {
+    position: relative;
+  }
 }
 
 /* ==========================================================================
@@ -535,14 +676,33 @@
 }
 
 @media print {
+  @page reportPortrait {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+
+  @page reportLandscape {
+    size: A4 landscape;
+    margin: 12mm;
+  }
+
   html,
   body {
     background: #ffffff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   .portal-report-page {
     padding: 0 !important;
     background: #ffffff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .portal-report-page,
+  .portal-report-sheet {
+    max-width: none !important;
   }
 
   .portal-report-actions {
@@ -553,10 +713,183 @@
     margin: 0 !important;
     border: none !important;
     box-shadow: none !important;
+    border-radius: 0 !important;
+    background: #ffffff !important;
+    gap: 0 !important;
   }
-}
 
-@page {
-  size: A4 landscape;
-  margin: 12mm;
+  .portal-report-print-page,
+  .report-cover,
+  .report-executive,
+  .report-fleet-health,
+  .report-annex {
+    min-height: auto !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .portal-report-print-page:last-child,
+  .report-annex:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  .portal-report-print-page + .portal-report-print-page {
+    margin-top: 0 !important;
+  }
+
+  .report-cover,
+  .report-executive,
+  .report-fleet-health,
+  .report-annex {
+    overflow: visible !important;
+    width: 100% !important;
+    background: #ffffff !important;
+  }
+
+  .portal-report-table,
+  .report-table {
+    font-size: 10px !important;
+    width: 100% !important;
+  }
+
+  .portal-report-table th,
+  .portal-report-table td,
+  .report-table th,
+  .report-table td {
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+  }
+
+  .portal-report-table thead,
+  .report-table thead {
+    display: table-header-group !important;
+  }
+
+  .portal-report-table thead th,
+  .report-table thead th {
+    background: #072b40 !important;
+    color: #ffffff !important;
+  }
+
+  .portal-report-table tbody tr:nth-child(odd),
+  .report-table tbody tr:nth-child(odd) {
+    background: #ffffff !important;
+  }
+
+  .portal-report-table tbody tr:nth-child(even),
+  .report-table tbody tr:nth-child(even) {
+    background: #f8fafc !important;
+  }
+
+  .report-annex-shell {
+    min-height: auto !important;
+    padding: 0 !important;
+  }
+
+  .report-annex-header {
+    padding: 0 0 12px !important;
+  }
+
+  .report-annex-table-wrap {
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    overflow: visible !important;
+  }
+
+  .report-annex-table {
+    table-layout: fixed !important;
+  }
+
+  .report-annex-table th,
+  .report-annex-table td {
+    font-size: 9.5px !important;
+  }
+
+  .report-cover-shell {
+    background:
+      radial-gradient(circle at top left, rgba(164, 214, 94, 0.16), transparent 22%) !important,
+      linear-gradient(180deg, #0f2439 0%, #13344a 58%, #f4f6f8 58%, #ffffff 100%) !important;
+  }
+
+  .report-featured-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+
+  .report-vehicle-media {
+    display: none !important;
+  }
+
+  .report-vehicle-media {
+    height: 78px !important;
+    min-height: 78px !important;
+    padding: 10px 14px !important;
+  }
+
+  .report-vehicle-fallback {
+    max-width: 9.5rem !important;
+    border-radius: 14px !important;
+  }
+
+  .report-vehicle-body {
+    padding: 12px !important;
+    gap: 10px !important;
+  }
+
+  .report-vehicle-print-label {
+    display: inline-flex !important;
+    align-items: center !important;
+    padding: 4px 8px !important;
+    border-radius: 9999px !important;
+    border: 1px solid rgba(148, 163, 184, 0.28) !important;
+    background: #f8fafc !important;
+  }
+
+  .report-vehicle-body .font-mono.text-lg {
+    font-size: 1rem !important;
+    line-height: 1.2 !important;
+  }
+
+  .report-vehicle-body .text-sm {
+    line-height: 1.45 !important;
+  }
+
+  .portal-report-vehicle-card,
+  .report-alert-group,
+  .report-donut,
+  .report-table tr {
+    box-shadow: none !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .portal-report-vehicle-card {
+    min-height: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: visible !important;
+  }
+
+  .report-page-shell {
+    min-height: auto !important;
+  }
+
+  .report-page-shell > * {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+
+  .report-page-shell > .report-page-shell-lock,
+  .portal-report-section,
+  .report-alert-group,
+  .portal-report-vehicle-card {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
 }

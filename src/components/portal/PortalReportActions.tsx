@@ -1,9 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { Printer } from 'lucide-react';
+import { Download, Printer } from 'lucide-react';
 
-export function PortalReportActions({ backHref }: { backHref: string }) {
+export function PortalReportActions({
+  backHref,
+  pdfHref,
+}: {
+  backHref: string;
+  pdfHref: string;
+}) {
   return (
     <div className="portal-report-actions flex flex-wrap items-center justify-between gap-3">
       <Link
@@ -12,14 +18,23 @@ export function PortalReportActions({ backHref }: { backHref: string }) {
       >
         Voltar ao portal
       </Link>
-      <button
-        type="button"
-        onClick={() => window.print()}
-        className="inline-flex items-center gap-2 rounded-xl bg-[#022D44] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#033956]"
-      >
-        <Printer className="h-4 w-4" />
-        Imprimir / salvar em PDF
-      </button>
+      <div className="flex flex-wrap items-center gap-3">
+        <a
+          href={pdfHref}
+          className="inline-flex items-center gap-2 rounded-xl bg-[#022D44] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#033956]"
+        >
+          <Download className="h-4 w-4" />
+          Baixar PDF
+        </a>
+        <button
+          type="button"
+          onClick={() => window.print()}
+          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
+        >
+          <Printer className="h-4 w-4" />
+          Imprimir
+        </button>
+      </div>
     </div>
   );
 }
