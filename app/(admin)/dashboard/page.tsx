@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
+import { differenceInCalendarDays, parseISO } from 'date-fns';
 import { DashboardCharts, type DashboardChartsData } from '@/components/dashboard/DashboardCharts';
 import { parseDateRangeFromSearchParams } from '@/lib/dateRange';
 import { getDashboardData } from '@/lib/analytics/dashboard';
@@ -9,10 +10,13 @@ import {
   type ExecDashboardResponse,
 } from '@/lib/analytics/dashboardExec';
 
-const DEFAULT_BUCKET: BucketGranularity = 'week';
-
 interface DashboardPageProps {
   searchParams: { from?: string; to?: string };
+}
+
+function getDefaultBucket(dateRange: { from: string; to: string }): BucketGranularity {
+  const totalDays = differenceInCalendarDays(parseISO(dateRange.to), parseISO(dateRange.from)) + 1;
+  return totalDays > 120 ? 'month' : 'week';
 }
 
 function getDashboardEmptyState() {
@@ -64,6 +68,7 @@ function getEmptyDashboardData(
         UNKNOWN: 0,
       },
       snapshotCount: 0,
+      latestReferenceDate: null,
     },
     error: options?.error,
     emptyState: options?.emptyState,
@@ -110,10 +115,13 @@ function getEmptyExecDashboardData(
 }
 
 async function getDashboardPageData(dateRange: { from: string; to: string }) {
+  const defaultBucket = getDefaultBucket(dateRange);
+
   if (!process.env.DATABASE_URL) {
     return {
       data: getEmptyDashboardData(dateRange),
-      execData: getEmptyExecDashboardData(dateRange, DEFAULT_BUCKET, 'Database not configured'),
+      execData: getEmptyExecDashboardData(dateRange, defaultBucket, 'Database not configured'),
+      defaultBucket,
     };
   }
 
@@ -128,13 +136,14 @@ async function getDashboardPageData(dateRange: { from: string; to: string }) {
     if (totalSnapshots === 0 && totalFinancialEntries === 0 && totalFineRecords === 0) {
       return {
         data: getEmptyDashboardData(dateRange, { emptyState: getDashboardEmptyState() }),
-        execData: getEmptyExecDashboardData(dateRange, DEFAULT_BUCKET),
+        execData: getEmptyExecDashboardData(dateRange, defaultBucket),
+        defaultBucket,
       };
     }
 
     const [dashboardData, execData] = await Promise.all([
       getDashboardData(db, dateRange),
-      getExecDashboardData(db, dateRange, DEFAULT_BUCKET),
+      getExecDashboardData(db, dateRange, defaultBucket),
     ]);
 
     return {
@@ -142,26 +151,28 @@ async function getDashboardPageData(dateRange: { from: string; to: string }) {
         ...dashboardData,
       },
       execData,
+      defaultBucket,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Falha ao carregar dashboard';
     return {
       data: getEmptyDashboardData(dateRange, { error: message }),
-      execData: getEmptyExecDashboardData(dateRange, DEFAULT_BUCKET, message),
+      execData: getEmptyExecDashboardData(dateRange, defaultBucket, message),
+      defaultBucket,
     };
   }
 }
 
 async function DashboardContent({ searchParams }: DashboardPageProps) {
   const dateRange = parseDateRangeFromSearchParams(searchParams);
-  const { data, execData } = await getDashboardPageData(dateRange);
+  const { data, execData, defaultBucket } = await getDashboardPageData(dateRange);
 
   return (
     <DashboardCharts
       data={data}
       initialExecData={execData}
       dateRange={dateRange}
-      initialBucket={DEFAULT_BUCKET}
+      initialBucket={defaultBucket}
     />
   );
 }

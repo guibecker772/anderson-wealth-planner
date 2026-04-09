@@ -49,6 +49,7 @@ export interface FleetResponse {
   kpis: FleetKPIs;
   vehicles: FleetVehicleRow[];
   dateRange: DateRangeStrings;
+  latestReferenceDate: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -95,6 +96,7 @@ export interface VehicleDetailResponse {
   kpis: VehicleDetailKPIs;
   snapshots: VehicleSnapshotRow[];
   dateRange: DateRangeStrings;
+  latestReferenceDate: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -166,15 +168,82 @@ function emptyQuality(): Record<QualityStatus, number> {
   return { OK: 0, WARNING: 0, REVIEW_REQUIRED: 0, UNKNOWN: 0 };
 }
 
+type SnapshotDisplayFields = {
+  referenceDate: Date;
+  sourceRowNumber: number;
+  model?: string | null;
+  investorNormalized?: string | null;
+  driverNormalized?: string | null;
+  vehicleStatusNormalized?: string | null;
+  vehicleStatusRaw?: string | null;
+};
+
+function compareSnapshotRecency(left: SnapshotDisplayFields, right: SnapshotDisplayFields): number {
+  const byDate = right.referenceDate.getTime() - left.referenceDate.getTime();
+  if (byDate !== 0) return byDate;
+
+  return right.sourceRowNumber - left.sourceRowNumber;
+}
+
+function sortSnapshotsByRecency<T extends SnapshotDisplayFields>(snapshots: T[]): T[] {
+  return [...snapshots].sort(compareSnapshotRecency);
+}
+
+function pickLatestNonEmptyValue<T extends SnapshotDisplayFields>(
+  snapshots: T[],
+  selector: (snapshot: T) => string | null | undefined,
+): string | null {
+  const match = sortSnapshotsByRecency(snapshots).find((snapshot) => {
+    const value = selector(snapshot);
+    return typeof value === 'string' && value.trim() !== '';
+  });
+
+  return match ? selector(match) ?? null : null;
+}
+
+async function listHistoricalDriverSnapshots(
+  db: PrismaClient,
+  dateRange: DateRangeStrings,
+  options: {
+    investorId?: string;
+    plate?: string;
+    plates?: string[];
+  },
+) {
+  const where: Record<string, unknown> = {
+    referenceDate: { lte: new Date(`${dateRange.to}T23:59:59.999Z`) },
+    ...(options.investorId ? { investorId: options.investorId } : {}),
+  };
+
+  if (options.plate) {
+    where.plate = options.plate;
+  } else if (options.plates && options.plates.length > 0) {
+    where.plate = { in: options.plates };
+  } else {
+    return [];
+  }
+
+  return db.operationalSnapshot.findMany({
+    where,
+    select: {
+      plate: true,
+      driverNormalized: true,
+      referenceDate: true,
+      sourceRowNumber: true,
+    },
+    orderBy: [{ referenceDate: 'desc' }, { sourceRowNumber: 'desc' }],
+  });
+}
+
 /**
  * Status atual do veículo: snapshot mais recente do veículo dentro do período.
  * Se não houver status normalizado, usa o raw. Se nenhum, retorna "Desconhecido".
  */
 function deriveCurrentStatus(
-  snapshots: Array<{ referenceDate: Date; vehicleStatusNormalized: string | null; vehicleStatusRaw: string | null }>,
+  snapshots: Array<SnapshotDisplayFields>,
 ): string {
   if (snapshots.length === 0) return 'Desconhecido';
-  const sorted = [...snapshots].sort((a, b) => b.referenceDate.getTime() - a.referenceDate.getTime());
+  const sorted = sortSnapshotsByRecency(snapshots);
   const latest = sorted[0];
   return latest.vehicleStatusNormalized || latest.vehicleStatusRaw || 'Desconhecido';
 }
@@ -208,8 +277,9 @@ export async function getFleetData(
       amountToCharge: true,
       openAmount: true,
       rawJson: true,
+      sourceRowNumber: true,
     },
-    orderBy: { referenceDate: 'desc' },
+    orderBy: [{ referenceDate: 'desc' }, { sourceRowNumber: 'desc' }],
   });
 
   // Group by plate
@@ -218,6 +288,17 @@ export async function getFleetData(
     const arr = byPlate.get(snap.plate) ?? [];
     arr.push(snap);
     byPlate.set(snap.plate, arr);
+  }
+
+  const historicalDriverSnapshots = await listHistoricalDriverSnapshots(db, dateRange, {
+    investorId,
+    plates: Array.from(byPlate.keys()),
+  });
+  const historicalDriversByPlate = new Map<string, typeof historicalDriverSnapshots>();
+  for (const snapshot of historicalDriverSnapshots) {
+    const rows = historicalDriversByPlate.get(snapshot.plate) ?? [];
+    rows.push(snapshot);
+    historicalDriversByPlate.set(snapshot.plate, rows);
   }
 
   // Build vehicle rows
@@ -235,8 +316,12 @@ export async function getFleetData(
     const currentStatus = deriveCurrentStatus(plateSnaps);
     statusCounter.set(currentStatus, (statusCounter.get(currentStatus) ?? 0) + 1);
 
-    // Latest snapshot for investor/model/driver
-    const latest = plateSnaps[0]; // already sorted desc
+    const displayModel = pickLatestNonEmptyValue(plateSnaps, (snapshot) => snapshot.model);
+    const displayInvestor = pickLatestNonEmptyValue(plateSnaps, (snapshot) => snapshot.investorNormalized);
+    const displayDriver = pickLatestNonEmptyValue(
+      historicalDriversByPlate.get(plate) ?? plateSnaps,
+      (snapshot) => snapshot.driverNormalized,
+    );
 
     // Unique weeks
     const weekSet = new Set<string>();
@@ -270,9 +355,9 @@ export async function getFleetData(
 
     const row: FleetVehicleRow = {
       plate,
-      model: latest.model ?? null,
-      investor: latest.investorNormalized ?? null,
-      driver: latest.driverNormalized ?? null,
+      model: displayModel,
+      investor: displayInvestor,
+      driver: displayDriver,
       currentStatus,
       snapshotCount: plateSnaps.length,
       revenueReceived: round2(revenue),
@@ -319,7 +404,11 @@ export async function getFleetData(
     statusDistribution,
   };
 
-  return { kpis, vehicles, dateRange };
+  const latestReferenceDate = snapshots[0]?.referenceDate
+    ? snapshots[0].referenceDate.toISOString().split('T')[0]
+    : null;
+
+  return { kpis, vehicles, dateRange, latestReferenceDate };
 }
 
 // ---------------------------------------------------------------------------
@@ -356,15 +445,29 @@ export async function getVehicleDetail(
       openAmount: true,
       paymentState: true,
       rawJson: true,
+      sourceRowNumber: true,
     },
-    orderBy: { referenceDate: 'asc' },
+    orderBy: [{ referenceDate: 'asc' }, { sourceRowNumber: 'asc' }],
   });
 
   if (snapshots.length === 0) return null;
 
-  // Latest snapshot for header info (most recent)
-  const latest = [...snapshots].sort((a, b) => b.referenceDate.getTime() - a.referenceDate.getTime())[0];
+  const historicalDriverSnapshots = await listHistoricalDriverSnapshots(db, dateRange, {
+    investorId,
+    plate,
+  });
+
+  // Header fields use the most recent usable value found within the selected period.
+  const latest = sortSnapshotsByRecency(snapshots)[0];
   const currentStatus = latest.vehicleStatusNormalized || latest.vehicleStatusRaw || 'Desconhecido';
+  const displayModel = pickLatestNonEmptyValue(snapshots, (snapshot) => snapshot.model);
+  const displayInvestor = pickLatestNonEmptyValue(snapshots, (snapshot) => snapshot.investorNormalized);
+  const driverSnapshotsForDisplay: SnapshotDisplayFields[] =
+    historicalDriverSnapshots.length > 0 ? historicalDriverSnapshots : snapshots;
+  const displayDriver = pickLatestNonEmptyValue(
+    driverSnapshotsForDisplay,
+    (snapshot) => snapshot.driverNormalized,
+  );
 
   const weekSet = new Set<string>();
   let totalRevenue = 0;
@@ -415,9 +518,9 @@ export async function getVehicleDetail(
 
   return {
     plate,
-    model: latest.model ?? null,
-    investor: latest.investorNormalized ?? null,
-    driver: latest.driverNormalized ?? null,
+    model: displayModel,
+    investor: displayInvestor,
+    driver: displayDriver,
     currentStatus,
     kpis: {
       snapshotCount: snapshots.length,
@@ -431,6 +534,7 @@ export async function getVehicleDetail(
     },
     snapshots: rows,
     dateRange,
+    latestReferenceDate: latest.referenceDate.toISOString().split('T')[0],
   };
 }
 

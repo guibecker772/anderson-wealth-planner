@@ -4,6 +4,7 @@ import type { FleetResponse } from '@/lib/analytics/fleet-metrics';
 
 const baseData: FleetResponse = {
   dateRange: { from: '2026-03-01', to: '2026-03-31' },
+  latestReferenceDate: '2026-03-31',
   kpis: {
     totalVehicles: 4,
     totalSnapshots: 8,

@@ -4,7 +4,6 @@ import {
   AlertTriangle,
   Car,
   Clock3,
-  FileText,
   Gauge,
   ShieldCheck,
   TrendingDown,
@@ -18,7 +17,7 @@ import { getSessionUser } from '@/lib/auth-utils';
 import { db } from '@/lib/db';
 import { resolvePortalDateRange } from '@/lib/portalDateRange';
 import { buildPortalInvestorReportData } from '@/lib/portal-report';
-import { getVehicleImageMeta } from '@/lib/portalVehicleMedia';
+import { resolveVehicleMedia, isPlaceholderMedia } from '@/lib/portalVehicleMedia';
 
 export const dynamic = 'force-dynamic';
 
@@ -65,9 +64,7 @@ function getStatusColor(status: string): string {
   return '#5b7085';
 }
 
-function isGenericVehicleMedia(src: string): boolean {
-  return src.endsWith('/default.svg');
-}
+
 
 function buildStatusDonut(statuses: FleetStatusCount[]) {
   const total = statuses.reduce((acc, item) => acc + item.count, 0);
@@ -185,7 +182,7 @@ export default async function PortalReportPage({ searchParams }: Props) {
                     <ReportMetaCard label="Período" value={periodLabel} />
                     <ReportMetaCard label="Gerado em" value={generatedAt} />
                     <ReportMetaCard label="Veículos" value={`${fleet.kpis.totalVehicles} placa(s)`} />
-                    <ReportMetaCard label="Snapshots" value={`${fleet.kpis.totalSnapshots} leitura(s)`} />
+                    <ReportMetaCard label="Leituras do período" value={`${fleet.kpis.totalSnapshots} leitura(s)`} />
                   </div>
                 </div>
 
@@ -228,7 +225,7 @@ export default async function PortalReportPage({ searchParams }: Props) {
                     tone="red"
                   />
                   <ExecutiveMetricCard title="Veículos" value={String(fleet.kpis.totalVehicles)} icon={<Car className="h-5 w-5" />} tone="slate" />
-                  <ExecutiveMetricCard title="Snapshots" value={String(fleet.kpis.totalSnapshots)} icon={<FileText className="h-5 w-5" />} tone="slate" />
+                  <ExecutiveMetricCard title="Leituras registradas" value={String(fleet.kpis.totalSnapshots)} icon={<Clock3 className="h-5 w-5" />} tone="slate" />
                   <div className="md:col-span-2">
                     <ExecutiveMetricCard
                       title="Valores a Cobrar"
@@ -244,7 +241,7 @@ export default async function PortalReportPage({ searchParams }: Props) {
                 <div className="space-y-3">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Leitura executiva</p>
                   <p className="text-sm leading-7 text-slate-600">
-                    A carteira encerra o período com {fleet.kpis.totalVehicles} veículos monitorados e {fleet.kpis.totalSnapshots} snapshots operacionais consolidados. O principal ponto de leitura é a relação entre resultado líquido, pressão de custos e valores ainda em aberto.
+                    A carteira encerra o período com {fleet.kpis.totalVehicles} veículos monitorados e {fleet.kpis.totalSnapshots} leituras operacionais registradas. O principal ponto de leitura é a relação entre resultado líquido, pressão de custos e valores ainda em aberto.
                   </p>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-3">
@@ -390,9 +387,9 @@ export default async function PortalReportPage({ searchParams }: Props) {
 
                   <div className={`report-featured-grid grid gap-4 ${featuredGridClass}`}>
                     {report.featuredVehicles.map((vehicle) => {
-                      const media = getVehicleImageMeta(vehicle.model);
+                      const media = resolveVehicleMedia(vehicle.model);
                       const qualityLabel = getQualityLabel(vehicle.qualitySummary.WARNING, vehicle.qualitySummary.REVIEW_REQUIRED);
-                      const useGraphicFallback = isGenericVehicleMedia(media.src);
+                      const useGraphicFallback = isPlaceholderMedia(media);
 
                       return (
                         <article key={vehicle.plate} className="portal-report-vehicle-card report-vehicle-card overflow-hidden rounded-[22px] border border-slate-200/80 bg-white">
@@ -443,7 +440,9 @@ export default async function PortalReportPage({ searchParams }: Props) {
                             </div>
 
                             <div className="flex items-center justify-between text-xs text-slate-500">
-                              <span>{vehicle.snapshotCount} snapshot(s)</span>
+                              <span>
+                                {vehicle.amountToCharge > 0 ? `${formatCurrency(vehicle.amountToCharge)} a cobrar` : 'Sem cobranças pendentes'}
+                              </span>
                               <QualityPill
                                 warning={vehicle.qualitySummary.WARNING}
                                 reviewRequired={vehicle.qualitySummary.REVIEW_REQUIRED}

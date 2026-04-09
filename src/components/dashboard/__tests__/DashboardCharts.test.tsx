@@ -81,12 +81,12 @@ describe('DashboardCharts', () => {
       />
     );
 
-    expect(html).toContain('Painel Executivo');
+    expect(html).toContain('Visao Geral');
     expect(html).toContain('Nenhum dado importado ainda');
     expect(html).toContain('Ir para Configuracoes');
-    expect(html).toContain('Fluxo de Caixa Diario');
-    expect(html).toContain('Top Categorias');
-    expect(html).toContain('0,0%');
+    expect(html).toContain('Receita e despesa');
+    expect(html).toContain('Margem de lucro');
+    expect(html).toContain('Sem comparacao');
     expect(html).toMatch(/R\$\s*0,00/);
   });
 });

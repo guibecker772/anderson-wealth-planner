@@ -3,15 +3,12 @@
 import Link from 'next/link';
 import { useEffect, useState, type ReactNode } from 'react';
 import {
-  Area,
-  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
   Cell,
+  LabelList,
   Legend,
-  Line,
-  LineChart,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -21,16 +18,11 @@ import {
 import {
   AlertTriangle,
   ArrowDownCircle,
-  ArrowDownRight,
-  ArrowUpRight,
-  BarChart3,
-  CircleDollarSign,
+  Clock3,
   DollarSign,
-  HelpCircle,
   Info,
   Layers3,
   Loader2,
-  Minus,
   PiggyBank,
   Radar,
   Receipt,
@@ -140,6 +132,7 @@ export interface DashboardChartsData {
     fleetStates: Array<{ status: string; count: number }>;
     qualitySummary: Record<'OK' | 'WARNING' | 'REVIEW_REQUIRED' | 'UNKNOWN', number>;
     snapshotCount: number;
+    latestReferenceDate: string | null;
   };
   error?: string;
   emptyState?: DashboardEmptyState;
@@ -153,7 +146,6 @@ interface DashboardChartsProps {
 }
 
 const GRANULARITY_OPTIONS: { value: BucketGranularity; label: string }[] = [
-  { value: 'day', label: 'Dia' },
   { value: 'week', label: 'Semana' },
   { value: 'month', label: 'Mes' },
 ];
@@ -193,11 +185,6 @@ function formatCurrencyFull(value: number): string {
   }).format(value);
 }
 
-function formatShortDate(dateStr: string): string {
-  const date = new Date(`${dateStr}T12:00:00`);
-  return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
-}
-
 export function DashboardCharts({
   data,
   initialExecData,
@@ -209,15 +196,72 @@ export function DashboardCharts({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(data.error ?? initialExecData.error ?? null);
 
-  const { summary, cashflow, topCategories, emptyState, financialSummary, operationalSummary } = data;
+  const { summary, topCategories, emptyState, financialSummary, operationalSummary } = data;
   const isEmptyState = Boolean(emptyState?.isEmpty);
   const showComparisons = !isEmptyState;
-  const marginValue =
-    execData.summary.margin != null
-      ? `${execData.summary.margin.toFixed(1)}%`
-      : isEmptyState
-        ? '0,0%'
-        : '-';
+  const latestOperationalReferenceLabel = operationalSummary?.latestReferenceDate
+    ? formatDateDisplay(operationalSummary.latestReferenceDate)
+    : null;
+  const analyticSeries = trimExecSeries(execData.series);
+  const bucketLabel = bucket === 'month' ? 'mes' : 'semana';
+  const sortedCategories = [...topCategories].sort((a, b) => b.total - a.total);
+  const executiveKpis = [
+    {
+      title: 'Receita total',
+      value: formatCurrencyFull(summary.totalRevenue),
+      tooltip: 'Entradas financeiras reconhecidas no workbook no periodo selecionado.',
+      deltaPct: showComparisons ? execData.comparison.incomeReceived.deltaPct : undefined,
+      icon: <TrendingUp className="h-5 w-5" />,
+      accent: 'emerald' as const,
+      deltaPositiveIsGood: true,
+      subtext: 'Camada financeira do periodo.',
+    },
+    {
+      title: 'Despesa total',
+      value: formatCurrencyFull(summary.totalExpenses),
+      tooltip: 'Saidas financeiras reconhecidas no workbook no periodo selecionado.',
+      deltaPct: showComparisons ? execData.comparison.expensePaid.deltaPct : undefined,
+      icon: <TrendingDown className="h-5 w-5" />,
+      accent: 'red' as const,
+      deltaPositiveIsGood: false,
+      subtext: 'Nao inclui investimentos.',
+    },
+    {
+      title: 'Resultado de caixa',
+      value: formatCurrencyFull(execData.summary.profitCash ?? summary.netProfit),
+      tooltip: 'Receita total menos despesa total no ledger financeiro, antes de considerar investimentos.',
+      deltaPct: showComparisons ? execData.comparison.profitCash.deltaPct : undefined,
+      icon: <DollarSign className="h-5 w-5" />,
+      accent: (execData.summary.profitCash ?? summary.netProfit) >= 0 ? 'emerald' as const : 'red' as const,
+      deltaPositiveIsGood: true,
+      subtext: financialSummary
+        ? `Receita menos despesa financeira. Apos investimentos: ${formatCurrencyFull(financialSummary.netCashAfterInvestments)}.`
+        : 'Receita menos despesa financeira do periodo.',
+    },
+    {
+      title: 'Investimentos',
+      value: formatCurrencyFull(financialSummary?.investments ?? 0),
+      tooltip: 'Saidas classificadas como investimento no workbook financeiro.',
+      deltaPct: undefined,
+      icon: <PiggyBank className="h-5 w-5" />,
+      accent: 'blue' as const,
+      deltaPositiveIsGood: false,
+      subtext: financialSummary ? `${financialSummary.entryCount} lancamentos reconhecidos` : 'Sem lancamentos no periodo.',
+    },
+    {
+      title: 'Valor a receber',
+      value: formatCurrencyFull(operationalSummary?.amountToCharge ?? 0),
+      tooltip: 'Base prevista de cobranca da operacao no periodo.',
+      deltaPct: undefined,
+      icon: <ArrowDownCircle className="h-5 w-5" />,
+      accent: 'blue' as const,
+      deltaPositiveIsGood: true,
+      subtext:
+        operationalSummary && operationalSummary.pendingReceivables > 0
+          ? `${formatCurrencyFull(operationalSummary.pendingReceivables)} em aberto`
+          : 'Sem aberto relevante na operacao.',
+    },
+  ];
 
   useEffect(() => {
     setExecData(initialExecData);
@@ -309,252 +353,163 @@ export function DashboardCharts({
 
   return (
     <div className="page-shell">
-      <div className="editorial-panel overflow-hidden px-7 py-7 lg:px-9">
+      <div className="editorial-panel overflow-hidden px-7 py-6 lg:px-8 lg:py-6">
         <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#022D44] via-[#0d4566] to-[#A8CF4C]" />
         <div className="absolute -left-20 top-10 h-56 w-56 rounded-full bg-[#A8CF4C]/18 blur-3xl" />
         <div className="absolute right-0 top-0 h-64 w-64 rounded-full bg-[#022D44]/10 blur-3xl" />
 
-        <div className="relative grid gap-8 xl:grid-cols-[1.4fr_0.95fr]">
-          <div className="space-y-6">
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="page-hero-chip">
-                <Sparkles className="h-3.5 w-3.5" />
-                Painel Executivo multiaba
-              </span>
-              <span className="page-hero-chip">
-                <Layers3 className="h-3.5 w-3.5" />
-                Operacao + caixa sem dupla contagem
-              </span>
-              <DateRangeBadge from={dateRange.from} to={dateRange.to} />
-            </div>
-
-            <div className="max-w-3xl space-y-3">
-              <h1 className="text-4xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">
-                Visao Geral
-              </h1>
-              <p className="max-w-2xl text-sm leading-7 text-white/82 sm:text-base">
-                Um cockpit com a camada operacional da frota, o ledger financeiro do workbook e os
-                sinais de qualidade que impactam a leitura executiva.
-              </p>
-            </div>
-
-            <div className="hero-metrics-grid">
-              <HeroMetricCard
-                label="Resultado de caixa"
-                value={formatCurrencyFull(execData.summary.profitCash ?? summary.netProfit)}
-                tone={(execData.summary.profitCash ?? summary.netProfit) >= 0 ? 'emerald' : 'red'}
-                detail={showComparisons ? `${formatDeltaPct(execData.comparison.profitCash.deltaPct)} vs ant.` : 'Sem comparacao'}
-              />
-              <HeroMetricCard
-                label="Resultado operacional"
-                value={formatCurrencyFull(operationalSummary?.netOperational ?? 0)}
-                tone={(operationalSummary?.netOperational ?? 0) >= 0 ? 'blue' : 'red'}
-                detail={`${operationalSummary?.snapshotCount ?? 0} snapshots no periodo`}
-              />
-              <HeroMetricCard
-                label="Exposicao a receber"
-                value={formatCurrencyFull(summary.pendingReceivables)}
-                tone={summary.pendingReceivables > 0 ? 'blue' : 'emerald'}
-                detail={summary.overdueReceivables > 0 ? `${formatCurrencyFull(summary.overdueReceivables)} vencidos` : 'Sem vencidos relevantes'}
-              />
-            </div>
+        <div className="relative space-y-5">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="page-hero-chip">
+              <Sparkles className="h-3.5 w-3.5" />
+              Painel executivo do periodo
+            </span>
+            <span className="page-hero-chip">
+              <Layers3 className="h-3.5 w-3.5" />
+              Financeiro e operacao em camadas separadas
+            </span>
+            <DateRangeBadge from={dateRange.from} to={dateRange.to} />
           </div>
 
-          <div className="glass-panel border-white/75 bg-white/86 p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Leitura viva</p>
-                <h2 className="mt-2 text-lg font-semibold text-slate-900">Pulso do periodo</h2>
-                <p className="mt-1 text-sm text-slate-600">
-                  Compare margem, cobertura da base e volume financeiro sem repetir todos os KPIs da dobra seguinte.
+          {latestOperationalReferenceLabel ? (
+            <div className="inline-flex max-w-md items-start gap-3 rounded-[20px] border border-white/12 bg-white/8 px-4 py-3 text-white/92 shadow-[0_20px_40px_-30px_rgba(2,45,68,0.45)] backdrop-blur-sm">
+              <span className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-white/14 text-white">
+                <Clock3 className="h-4 w-4" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/68">
+                  Última leitura disponível
+                </p>
+                <p className="mt-1 text-sm font-semibold text-white">
+                  {latestOperationalReferenceLabel}
+                </p>
+                <p className="mt-1 text-xs leading-5 text-white/70">
+                  Data mais recente encontrada na base operacional para o período consultado.
                 </p>
               </div>
-              <div className="flex items-center gap-1 rounded-full border border-white/70 bg-white/80 p-1 shadow-sm">
-                {GRANULARITY_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => handleBucketChange(opt.value)}
-                    disabled={loading}
-                    className={`rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
-                      bucket === opt.value
-                        ? 'bg-[#022D44] text-white shadow-sm'
-                        : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
-                    } ${loading ? 'opacity-60' : ''}`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
             </div>
+          ) : null}
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              <PulseItem
-                icon={<CircleDollarSign className="h-4 w-4" />}
-                label="Margem"
-                value={marginValue}
-                delta={showComparisons ? execData.comparison.margin.deltaPP : null}
-                isPercent
-                positiveIsGood
-              />
-              <PulseItem
-                icon={<Receipt className="h-4 w-4" />}
-                label="Investimentos"
-                value={formatCurrencyFull(financialSummary?.investments ?? 0)}
-                delta={null}
-                positiveIsGood={false}
-              />
-              <PulseItem
-                icon={<Truck className="h-4 w-4" />}
-                label="Snapshots"
-                value={String(operationalSummary?.snapshotCount ?? 0)}
-                delta={null}
-                positiveIsGood
-              />
-              <PulseItem
-                icon={<Wallet className="h-4 w-4" />}
-                label="Lancamentos"
-                value={String(financialSummary?.entryCount ?? 0)}
-                delta={null}
-                positiveIsGood
-              />
-            </div>
+          <div className="max-w-3xl space-y-2.5">
+            <h1 className="text-[clamp(2.35rem,4vw,3.3rem)] font-semibold tracking-[-0.045em] text-white">
+              Visao Geral
+            </h1>
+            <p className="max-w-3xl text-sm leading-6 text-white/82 sm:text-[15px] sm:leading-6">
+              Leitura executiva do periodo para acompanhar caixa, investimentos, cobranca prevista
+              e desempenho operacional sem redundancia no topo.
+            </p>
+          </div>
 
-            {loading ? (
-              <div className="mt-4 inline-flex items-center gap-2 text-xs text-slate-500">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Recarregando granularidade...
-              </div>
-            ) : null}
+          <div className="grid gap-3.5 md:grid-cols-2 xl:grid-cols-5">
+            {executiveKpis.map((metric) => (
+              <KPIBandCard key={metric.title} {...metric} />
+            ))}
           </div>
         </div>
       </div>
 
       {emptyState ? <DashboardEmptyBanner emptyState={emptyState} /> : null}
 
-      <div className="grid gap-4 xl:grid-cols-4">
-        <KPIBandCard
-          title="Receita financeira"
-          value={formatCurrencyFull(summary.totalRevenue)}
-          tooltip="Entradas do workbook na aba Receita."
-          deltaPct={showComparisons ? execData.comparison.incomeReceived.deltaPct : undefined}
-          icon={<TrendingUp className="h-5 w-5" />}
-          accent="emerald"
-          deltaPositiveIsGood
-        />
-        <KPIBandCard
-          title="Despesa financeira"
-          value={formatCurrencyFull(summary.totalExpenses)}
-          tooltip="Saidas de caixa da aba Despesa."
-          deltaPct={showComparisons ? execData.comparison.expensePaid.deltaPct : undefined}
-          icon={<TrendingDown className="h-5 w-5" />}
-          accent="red"
-          deltaPositiveIsGood={false}
-        />
-        <KPIBandCard
-          title="Contas a receber"
-          value={formatCurrencyFull(summary.pendingReceivables)}
-          tooltip="Pendencia financeira do periodo."
-          subtext={summary.overdueReceivables > 0 ? `${formatCurrencyFull(summary.overdueReceivables)} vencidos` : 'Sem vencidos'}
-          deltaPct={showComparisons ? execData.comparison.receivable.deltaPct : undefined}
-          icon={<ArrowDownCircle className="h-5 w-5" />}
-          accent={summary.overdueReceivables > 0 ? 'amber' : 'blue'}
-        />
-        <KPIBandCard
-          title="Contas a pagar"
-          value={formatCurrencyFull(summary.pendingPayables)}
-          tooltip="Pendencia financeira do periodo."
-          subtext={summary.overduePayables > 0 ? `${formatCurrencyFull(summary.overduePayables)} vencidos` : 'Sem vencidos'}
-          deltaPct={showComparisons ? execData.comparison.payable.deltaPct : undefined}
-          icon={<Receipt className="h-5 w-5" />}
-          accent={summary.overduePayables > 0 ? 'amber' : 'slate'}
-        />
-      </div>
-
       {(financialSummary || operationalSummary) ? (
-        <div className="grid gap-6 xl:grid-cols-2">
-          {financialSummary ? (
-            <LayerShowcase
-              title="Camada Financeira"
-              subtitle="Ledger canonico do workbook: entradas, saidas e investimentos."
-              badge="Fluxo financeiro"
-              variant="financial"
-              icon={<Wallet className="h-4 w-4" />}
-              footer={`${financialSummary.entryCount} lancamentos reconhecidos`}
-              metrics={[
-                {
-                  label: 'Entradas',
-                  value: formatCurrencyFull(financialSummary.revenue),
-                  tone: 'emerald',
-                  icon: <TrendingUp className="h-4 w-4" />,
-                },
-                {
-                  label: 'Saidas',
-                  value: formatCurrencyFull(financialSummary.expense),
-                  tone: 'red',
-                  icon: <TrendingDown className="h-4 w-4" />,
-                },
-                {
-                  label: 'Investimentos',
-                  value: formatCurrencyFull(financialSummary.investments),
-                  tone: 'blue',
-                  icon: <PiggyBank className="h-4 w-4" />,
-                },
-                {
-                  label: 'Saldo apos investimentos',
-                  value: formatCurrencyFull(financialSummary.netCashAfterInvestments),
-                  tone: financialSummary.netCashAfterInvestments >= 0 ? 'emerald' : 'red',
-                  icon: <DollarSign className="h-4 w-4" />,
-                  featured: true,
-                },
-              ]}
-            />
-          ) : null}
-          {operationalSummary ? (
-            <LayerShowcase
-              title="Camada Operacional"
-              subtitle="Cobranca, recebimento e custo da frota pela planilha operacional."
-              badge="Base operacional"
-              variant="operational"
-              icon={<Truck className="h-4 w-4" />}
-              footer={`${operationalSummary.snapshotCount} snapshots e ${operationalSummary.fleetStates.length} estados de frota`}
-              metrics={[
-                {
-                  label: 'Receita recebida',
-                  value: formatCurrencyFull(operationalSummary.revenueReceived),
-                  tone: 'emerald',
-                  icon: <TrendingUp className="h-4 w-4" />,
-                },
-                {
-                  label: 'Custo operacional',
-                  value: formatCurrencyFull(operationalSummary.operationalCost),
-                  tone: 'amber',
-                  icon: <TrendingDown className="h-4 w-4" />,
-                },
-                {
-                  label: 'Valor a cobrar',
-                  value: formatCurrencyFull(operationalSummary.amountToCharge),
-                  tone: 'slate',
-                  icon: <Target className="h-4 w-4" />,
-                },
-                {
-                  label: 'Resultado operacional',
-                  value: formatCurrencyFull(operationalSummary.netOperational),
-                  tone: operationalSummary.netOperational >= 0 ? 'emerald' : 'red',
-                  icon: <DollarSign className="h-4 w-4" />,
-                  featured: true,
-                  subtext: operationalSummary.pendingReceivables > 0 ? `${formatCurrencyFull(operationalSummary.pendingReceivables)} em aberto` : 'Sem aberto relevante',
-                },
-              ]}
-            >
-              <div className="mt-5 flex flex-wrap gap-2">
-                {operationalSummary.fleetStates.slice(0, 6).map((fs) => (
-                  <span key={fs.status} className="rounded-full border border-slate-200 bg-white/85 px-3 py-1 text-xs text-slate-600 shadow-sm">
-                    {fs.status}: {fs.count}
-                  </span>
-                ))}
+        <div className="space-y-7 pt-1">
+          <div className="flex flex-col gap-3.5 lg:flex-row lg:items-end lg:justify-between">
+            <div className="space-y-2.5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Leitura por camada</p>
+              <div>
+                <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-900">Financeiro e operacional, sem disputar o topo</h2>
+                <p className="mt-1.5 max-w-3xl text-sm leading-6 text-slate-600">
+                  Os indicadores principais ficam na abertura. Abaixo, cada camada detalha a composicao
+                  dos numeros sem perder investimentos, custo operacional, valor a receber e resultado operacional.
+                </p>
               </div>
-            </LayerShowcase>
-          ) : null}
+            </div>
+          </div>
+
+          <div className="grid gap-6 xl:grid-cols-2">
+            {financialSummary ? (
+              <LayerShowcase
+                title="Camada Financeira"
+                subtitle="Entradas, saidas e investimentos reconhecidos no workbook financeiro."
+                badge="Fluxo financeiro"
+                variant="financial"
+                icon={<Wallet className="h-4 w-4" />}
+                footer={`${financialSummary.entryCount} lancamentos reconhecidos`}
+                metrics={[
+                  {
+                    label: 'Receita total',
+                    value: formatCurrencyFull(financialSummary.revenue),
+                    tone: 'emerald',
+                    icon: <TrendingUp className="h-4 w-4" />,
+                  },
+                  {
+                    label: 'Despesa total',
+                    value: formatCurrencyFull(financialSummary.expense),
+                    tone: 'red',
+                    icon: <TrendingDown className="h-4 w-4" />,
+                  },
+                  {
+                    label: 'Investimentos',
+                    value: formatCurrencyFull(financialSummary.investments),
+                    tone: 'blue',
+                    icon: <PiggyBank className="h-4 w-4" />,
+                  },
+                  {
+                    label: 'Saldo apos investimentos',
+                    value: formatCurrencyFull(financialSummary.netCashAfterInvestments),
+                    tone: financialSummary.netCashAfterInvestments >= 0 ? 'emerald' : 'red',
+                    icon: <DollarSign className="h-4 w-4" />,
+                    featured: true,
+                  },
+                ]}
+              />
+            ) : null}
+            {operationalSummary ? (
+              <LayerShowcase
+                title="Camada Operacional"
+                subtitle="Recebimento, custo e valor previsto da frota na leitura operacional."
+                badge="Base operacional"
+                variant="operational"
+                icon={<Truck className="h-4 w-4" />}
+                footer={`${operationalSummary.snapshotCount} snapshots e ${operationalSummary.fleetStates.length} estados de frota`}
+                metrics={[
+                  {
+                    label: 'Receita recebida',
+                    value: formatCurrencyFull(operationalSummary.revenueReceived),
+                    tone: 'emerald',
+                    icon: <TrendingUp className="h-4 w-4" />,
+                  },
+                  {
+                    label: 'Custo operacional',
+                    value: formatCurrencyFull(operationalSummary.operationalCost),
+                    tone: 'amber',
+                    icon: <TrendingDown className="h-4 w-4" />,
+                  },
+                  {
+                    label: 'Valor a receber',
+                    value: formatCurrencyFull(operationalSummary.amountToCharge),
+                    tone: 'slate',
+                    icon: <Target className="h-4 w-4" />,
+                  },
+                  {
+                    label: 'Resultado operacional',
+                    value: formatCurrencyFull(operationalSummary.netOperational),
+                    tone: operationalSummary.netOperational >= 0 ? 'emerald' : 'red',
+                    icon: <DollarSign className="h-4 w-4" />,
+                    featured: true,
+                    subtext: operationalSummary.pendingReceivables > 0 ? `${formatCurrencyFull(operationalSummary.pendingReceivables)} em aberto` : 'Sem aberto relevante',
+                  },
+                ]}
+              >
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {operationalSummary.fleetStates.slice(0, 6).map((fs) => (
+                    <span key={fs.status} className="rounded-full border border-slate-200 bg-white/85 px-3 py-1 text-xs text-slate-600 shadow-sm">
+                      {fs.status}: {fs.count}
+                    </span>
+                  ))}
+                </div>
+              </LayerShowcase>
+            ) : null}
+          </div>
         </div>
       ) : null}
 
@@ -588,139 +543,70 @@ export function DashboardCharts({
         </div>
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <ChartCard
-          title="Receita x despesa por janela"
-          subtitle={`Camada financeira agregada por ${bucket === 'day' ? 'dia' : bucket === 'week' ? 'semana' : 'mes'}.`}
-          icon={<Radar className="h-4 w-4 text-slate-500" />}
-          heightClass="h-[380px]"
-        >
-          {execData.series.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={execData.series} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" />
-                <XAxis dataKey="bucketLabel" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                <YAxis tickFormatter={(value) => formatCurrency(value)} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                <Tooltip
-                  formatter={(value: number, name: string) => [formatCurrencyFull(value), name === 'incomeReceived' ? 'Receita' : 'Despesa']}
-                  contentStyle={tooltipStyle}
-                />
-                <Legend formatter={(value) => (value === 'incomeReceived' ? 'Receita' : 'Despesa')} wrapperStyle={{ fontSize: '12px' }} />
-                <Bar dataKey="incomeReceived" name="incomeReceived" fill={CHART_COLORS.revenue} radius={[10, 10, 0, 0]} />
-                <Bar dataKey="expensePaid" name="expensePaid" fill={CHART_COLORS.expenses} radius={[10, 10, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <EmptyPanelState
-              heightClass="h-[380px]"
-              message={isEmptyState ? 'Nenhum dado importado ainda para compor este grafico.' : 'Nenhum dado no periodo selecionado'}
-              actionHref={emptyState?.actionHref}
-              actionLabel={emptyState?.actionLabel}
-            />
-          )}
-        </ChartCard>
-
-        <ChartCard
-          title="Evolucao do lucro"
-          subtitle="Lucro de caixa sem misturar ledger e operacional."
-          icon={<Sparkles className="h-4 w-4 text-slate-500" />}
-          heightClass="h-[380px]"
-        >
-          {execData.series.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={execData.series} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="profitGradientBold" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={CHART_COLORS.accent} stopOpacity={0.42} />
-                    <stop offset="100%" stopColor={CHART_COLORS.accent} stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" />
-                <XAxis dataKey="bucketLabel" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                <YAxis tickFormatter={(value) => formatCurrency(value)} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                <ReferenceLine y={0} stroke="rgba(100,116,139,0.5)" strokeDasharray="4 4" />
-                <Tooltip formatter={(value: number) => [formatCurrencyFull(value), 'Lucro']} contentStyle={tooltipStyle} />
-                <Area
-                  type="monotone"
-                  dataKey="profitCash"
-                  name="profitCash"
-                  stroke={CHART_COLORS.primary}
-                  strokeWidth={3}
-                  fill="url(#profitGradientBold)"
-                  dot={{ fill: CHART_COLORS.primary, strokeWidth: 0, r: 3 }}
-                  activeDot={{ r: 6 }}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          ) : (
-            <EmptyPanelState
-              heightClass="h-[380px]"
-              message={isEmptyState ? 'Nenhum dado importado ainda para acompanhar o lucro.' : 'Nenhum dado no periodo selecionado'}
-              actionHref={emptyState?.actionHref}
-              actionLabel={emptyState?.actionLabel}
-            />
-          )}
-        </ChartCard>
-      </div>
-
-      <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-        <ChartCard
-          title="Drivers de mudanca"
-          subtitle="Categorias que puxaram a despesa versus periodo anterior."
-          icon={<HelpCircle className="h-4 w-4 text-slate-500" />}
-          heightClass="h-full"
-        >
-          {execData.drivers.length > 0 ? (
-            <div className="soft-grid grid gap-3">
-              {execData.drivers.map((driver, index) => (
-                <div key={driver.categoryId ?? driver.categoryName} className="rounded-[20px] border border-white/80 bg-white/88 p-4 shadow-[0_16px_40px_-28px_rgba(15,23,42,0.25)]">
-                  <div className="mb-3 flex items-center gap-2">
-                    <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: CATEGORY_COLORS[index % CATEGORY_COLORS.length] }} />
-                    <span className="truncate text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500" title={driver.categoryName}>
-                      {driver.categoryName}
-                    </span>
-                  </div>
-                  <p className="text-2xl font-semibold tracking-[-0.03em] text-slate-900">{formatCurrency(driver.totalPaid)}</p>
-                  <div className="mt-2 flex items-center gap-2">
-                    <DeltaIndicator value={driver.deltaValue} pct={driver.deltaPct} positiveIsGood={false} />
-                  </div>
-                </div>
+      <div className="space-y-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-2">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Analise temporal</p>
+            <div>
+              <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-900">Graficos de acompanhamento do periodo</h2>
+              <p className="mt-1 max-w-3xl text-sm text-slate-600">
+                Detalhamento por periodo de receita, despesa, resultado de caixa e margem.
+              </p>
+            </div>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center gap-1 rounded-full border border-white/70 bg-white/90 p-1 shadow-sm">
+              {GRANULARITY_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => handleBucketChange(opt.value)}
+                  disabled={loading}
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
+                    bucket === opt.value
+                      ? 'bg-[#022D44] text-white shadow-sm'
+                      : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
+                  } ${loading ? 'opacity-60' : ''}`}
+                >
+                  {opt.label}
+                </button>
               ))}
             </div>
-          ) : (
-            <EmptyPanelState
-              compact
-              message={isEmptyState ? 'Os drivers aparecerao aqui assim que os arquivos forem importados.' : 'Nenhuma variacao relevante no periodo selecionado'}
-              actionHref={emptyState?.actionHref}
-              actionLabel={emptyState?.actionLabel}
-            />
-          )}
-        </ChartCard>
+            {loading ? (
+              <div className="inline-flex items-center gap-2 text-xs text-slate-500">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Recarregando granularidade...
+              </div>
+            ) : null}
+          </div>
+        </div>
 
-        <div className="grid gap-6">
+        <div className="grid gap-6 xl:grid-cols-2">
           <ChartCard
-          title="Fluxo de Caixa Diario"
-            subtitle="Receitas, despesas e saldo em leitura continua."
-            icon={<BarChart3 className="h-4 w-4 text-slate-500" />}
-            heightClass="h-[300px]"
+            title="Receita e despesa por período"
+            subtitle={`Entradas e saidas por ${bucketLabel} dentro do recorte selecionado.`}
+            icon={<Radar className="h-4 w-4 text-slate-500" />}
+            heightClass="h-[360px]"
           >
-            {cashflow.length > 0 ? (
+            {analyticSeries.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={cashflow} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
+                <BarChart data={analyticSeries} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" />
-                  <XAxis dataKey="date" tickFormatter={formatShortDate} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                  <XAxis dataKey="bucketLabel" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
                   <YAxis tickFormatter={(value) => formatCurrency(value)} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                  <Tooltip formatter={(value: number) => formatCurrencyFull(value)} labelFormatter={(label) => formatDateDisplay(label)} contentStyle={tooltipStyle} />
-                  <Legend wrapperStyle={{ fontSize: '12px' }} />
-                  <Line type="monotone" dataKey="revenue" name="Receitas" stroke={CHART_COLORS.revenue} strokeWidth={2.6} dot={false} />
-                  <Line type="monotone" dataKey="expenses" name="Despesas" stroke={CHART_COLORS.expenses} strokeWidth={2.3} dot={false} />
-                  <Line type="monotone" dataKey="balance" name="Saldo" stroke={CHART_COLORS.balance} strokeWidth={2.8} strokeDasharray="7 5" dot={false} />
-                </LineChart>
+                  <Tooltip
+                    formatter={(value: number, name: string) => [formatCurrencyFull(value), name === 'incomeReceived' ? 'Receita' : 'Despesa']}
+                    labelStyle={{ fontWeight: 600, marginBottom: 2 }}
+                    contentStyle={tooltipStyle}
+                  />
+                  <Legend formatter={(value) => (value === 'incomeReceived' ? 'Receita' : 'Despesa')} wrapperStyle={{ fontSize: '12px' }} />
+                  <Bar dataKey="incomeReceived" name="incomeReceived" fill={CHART_COLORS.revenue} radius={[10, 10, 0, 0]} />
+                  <Bar dataKey="expensePaid" name="expensePaid" fill={CHART_COLORS.expenses} radius={[10, 10, 0, 0]} />
+                </BarChart>
               </ResponsiveContainer>
             ) : (
               <EmptyPanelState
-                heightClass="h-[300px]"
-                message={isEmptyState ? 'O fluxo de caixa aparecera depois da primeira importacao.' : 'Nenhum dado no periodo selecionado'}
+                heightClass="h-[360px]"
+                message={isEmptyState ? 'Nenhum dado importado ainda para compor este comparativo.' : 'Nenhuma movimentacao relevante no periodo selecionado'}
                 actionHref={emptyState?.actionHref}
                 actionLabel={emptyState?.actionLabel}
               />
@@ -728,29 +614,96 @@ export function DashboardCharts({
           </ChartCard>
 
           <ChartCard
-            title="Top Categorias"
-            subtitle="Maiores gastos financeiros do periodo."
-            icon={<Receipt className="h-4 w-4 text-slate-500" />}
-            heightClass="h-[300px]"
+            title="Evolução do resultado de caixa"
+            subtitle={`Saldo entre receita e despesa por ${bucketLabel}.`}
+            icon={<Sparkles className="h-4 w-4 text-slate-500" />}
+            heightClass="h-[360px]"
           >
-            {topCategories.length > 0 ? (
+            {analyticSeries.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={topCategories} layout="vertical" margin={{ top: 5, right: 10, left: 72, bottom: 0 }}>
+                <BarChart data={analyticSeries} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" />
-                  <XAxis type="number" tickFormatter={(value) => formatCurrency(value)} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                  <YAxis type="category" dataKey="category" tick={{ fontSize: 11, fill: '#64748b' }} width={68} axisLine={false} tickLine={false} />
-                  <Tooltip formatter={(value: number) => formatCurrencyFull(value)} contentStyle={tooltipStyle} />
-                  <Bar dataKey="total" name="Total gasto" radius={[0, 10, 10, 0]}>
-                    {topCategories.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
+                  <XAxis dataKey="bucketLabel" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                  <YAxis tickFormatter={(value) => formatCurrency(value)} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                  <ReferenceLine y={0} stroke="rgba(100,116,139,0.5)" strokeDasharray="4 4" />
+                  <Tooltip formatter={(value: number) => [formatCurrencyFull(value), 'Resultado de caixa']} labelStyle={{ fontWeight: 600, marginBottom: 2 }} contentStyle={tooltipStyle} />
+                  <Bar dataKey="profitCash" name="Resultado de caixa" radius={[10, 10, 0, 0]}>
+                    {analyticSeries.map((entry) => (
+                      <Cell
+                        key={entry.bucketStart}
+                        fill={entry.profitCash >= 0 ? CHART_COLORS.primary : CHART_COLORS.expenses}
+                      />
                     ))}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
             ) : (
               <EmptyPanelState
-                heightClass="h-[300px]"
-                message={isEmptyState ? 'As categorias aparecerao aqui apos a importacao.' : 'Nenhum dado no periodo selecionado'}
+                heightClass="h-[360px]"
+                message={isEmptyState ? 'Nenhum dado importado ainda para acompanhar o resultado de caixa.' : 'Nenhum resultado de caixa no periodo selecionado'}
+                actionHref={emptyState?.actionHref}
+                actionLabel={emptyState?.actionLabel}
+              />
+            )}
+          </ChartCard>
+
+          <ChartCard
+            title="Margem de lucro"
+            subtitle="Resultado de caixa sobre a receita do periodo."
+            icon={<DollarSign className="h-4 w-4 text-slate-500" />}
+            heightClass="h-[360px]"
+          >
+            {execData.summary.margin != null ? (
+              <MarginGauge
+                value={execData.summary.margin}
+                delta={showComparisons ? execData.comparison.margin.deltaPP : null}
+              />
+            ) : (
+              <EmptyPanelState
+                heightClass="h-[360px]"
+                message={isEmptyState ? 'A margem aparecera aqui depois da primeira importacao.' : 'Sem receita suficiente no periodo para calcular a margem'}
+                actionHref={emptyState?.actionHref}
+                actionLabel={emptyState?.actionLabel}
+              />
+            )}
+          </ChartCard>
+
+          <ChartCard
+            title="Valor gasto por categoria financeira"
+            subtitle="Ranking das categorias que mais consumiram caixa no periodo."
+            icon={<Receipt className="h-4 w-4 text-slate-500" />}
+            heightClass="h-[360px]"
+          >
+            {sortedCategories.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={sortedCategories} layout="vertical" margin={{ top: 0, right: 95, left: 8, bottom: 0 }} barCategoryGap="24%">
+                  <XAxis type="number" hide />
+                  <YAxis
+                    type="category"
+                    dataKey="category"
+                    tick={{ fontSize: 13, fill: '#1e293b', fontWeight: 600 }}
+                    width={170}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(value: string) => (value.length > 24 ? `${value.slice(0, 23)}…` : value)}
+                  />
+                  <Tooltip
+                    formatter={(value: number) => [formatCurrencyFull(value), 'Total gasto']}
+                    labelStyle={{ fontWeight: 600, marginBottom: 2 }}
+                    contentStyle={tooltipStyle}
+                  />
+                  <Bar dataKey="total" name="Total gasto" radius={[0, 6, 6, 0]} barSize={24}>
+                    {sortedCategories.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
+                    ))}
+                    <LabelList dataKey="total" position="right" formatter={(value: number) => formatCurrency(value)} style={{ fontSize: 12, fontWeight: 700, fill: '#1e293b' }} />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <EmptyPanelState
+                heightClass="h-[360px]"
+                message={isEmptyState ? 'As categorias aparecerao aqui apos a importacao.' : 'Nenhum gasto categorizado no periodo selecionado'}
                 actionHref={emptyState?.actionHref}
                 actionLabel={emptyState?.actionLabel}
               />
@@ -816,80 +769,92 @@ function formatDeltaPct(value: number | null | undefined): string {
   return `${sign}${value.toFixed(1)}%`;
 }
 
-function formatDeltaValue(value: number | null | undefined): string {
-  if (value === null || value === undefined) return '';
-  const sign = value > 0 ? '+' : '';
-  return `${sign}${new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value)}`;
-}
-
 function formatDeltaPP(value: number | null | undefined): string {
-  if (value === null || value === undefined) return '-';
+  if (value === null || value === undefined) return 'Sem comparacao';
   const sign = value > 0 ? '+' : '';
   return `${sign}${value.toFixed(1)} p.p.`;
 }
 
-function HeroMetricCard({
-  label,
-  value,
-  tone,
-  detail,
-}: {
-  label: string;
-  value: string;
-  tone: 'blue' | 'emerald' | 'red';
-  detail: string;
-}) {
-  const palette = {
-    blue: 'from-[#022D44]/12 to-white text-[#022D44]',
-    emerald: 'from-emerald-500/12 to-white text-emerald-700',
-    red: 'from-red-500/12 to-white text-red-700',
-  }[tone];
-
-  return (
-    <div className={`hero-metric-card bg-gradient-to-br ${palette}`}>
-      <p className="metric-label-soft">{label}</p>
-      <p className="metric-value-fluid mt-3">{value}</p>
-      <p className="metric-helper mt-2">{detail}</p>
-    </div>
+function trimExecSeries(series: ExecSeriesPoint[]): ExecSeriesPoint[] {
+  const firstIndex = series.findIndex((entry) =>
+    Math.abs(entry.incomeReceived) > 0.009 || Math.abs(entry.expensePaid) > 0.009 || Math.abs(entry.profitCash) > 0.009
   );
+
+  if (firstIndex === -1) {
+    return [];
+  }
+
+  let lastIndex = series.length - 1;
+  while (
+    lastIndex >= firstIndex &&
+    Math.abs(series[lastIndex].incomeReceived) <= 0.009 &&
+    Math.abs(series[lastIndex].expensePaid) <= 0.009 &&
+    Math.abs(series[lastIndex].profitCash) <= 0.009
+  ) {
+    lastIndex -= 1;
+  }
+
+  return series.slice(firstIndex, lastIndex + 1);
 }
 
-function PulseItem({
-  icon,
-  label,
-  value,
-  delta,
-  positiveIsGood,
-  isPercent = false,
-}: {
-  icon: ReactNode;
-  label: string;
-  value: string;
-  delta: number | null;
-  positiveIsGood: boolean;
-  isPercent?: boolean;
-}) {
-  const color = delta == null
-    ? 'text-slate-400'
-    : positiveIsGood
-      ? delta >= 0 ? 'delta-positive' : 'delta-negative'
-      : delta >= 0 ? 'delta-negative' : 'delta-positive';
+function polarToCartesian(cx: number, cy: number, radius: number, angleInDegrees: number) {
+  const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0;
+  return {
+    x: cx + radius * Math.cos(angleInRadians),
+    y: cy + radius * Math.sin(angleInRadians),
+  };
+}
+
+function describeArc(cx: number, cy: number, radius: number, startAngle: number, endAngle: number) {
+  const start = polarToCartesian(cx, cy, radius, endAngle);
+  const end = polarToCartesian(cx, cy, radius, startAngle);
+  const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
+  return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`;
+}
+
+function MarginGauge({ value, delta }: { value: number; delta: number | null }) {
+  const clampedValue = Math.max(-100, Math.min(100, value));
+  const sweepAngle = ((clampedValue + 100) / 200) * 180;
+  const pointerAngle = sweepAngle - 180;
+  const gaugeColor = clampedValue >= 30 ? '#22c55e' : clampedValue >= 0 ? '#f59e0b' : '#ef4444';
+
+  const cx = 200;
+  const cy = 190;
+  const r = 148;
+  const sw = 30;
+  const pointer = polarToCartesian(cx, cy, r, pointerAngle + 180);
 
   return (
-    <div className="rounded-[22px] border border-white/80 bg-white/88 p-4 shadow-[0_20px_45px_-32px_rgba(15,23,42,0.3)]">
-      <div className="mb-2 flex items-center gap-2 text-slate-500">
-        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-600">{icon}</span>
-        <span className="text-[11px] font-semibold uppercase tracking-[0.12em]">{label}</span>
+    <div className="flex h-full items-center justify-center">
+      <div className="flex w-full flex-col items-center">
+        <svg viewBox="0 0 400 225" className="w-full">
+          {/* Background track */}
+          <path d={describeArc(cx, cy, r, -180, 0)} fill="none" stroke="#e2e8f0" strokeWidth={sw} strokeLinecap="round" />
+          {/* Subtle color zones */}
+          <path d={describeArc(cx, cy, r, -180, -120)} fill="none" stroke="rgba(239,68,68,0.10)" strokeWidth={sw} strokeLinecap="round" />
+          <path d={describeArc(cx, cy, r, -120, -60)} fill="none" stroke="rgba(245,158,11,0.08)" strokeWidth={sw} strokeLinecap="round" />
+          <path d={describeArc(cx, cy, r, -60, 0)} fill="none" stroke="rgba(34,197,94,0.08)" strokeWidth={sw} strokeLinecap="round" />
+          {/* Value arc */}
+          {sweepAngle > 0.5 && (
+            <path d={describeArc(cx, cy, r, -180, -180 + sweepAngle)} fill="none" stroke={gaugeColor} strokeWidth={sw} strokeLinecap="round" />
+          )}
+          {/* Pointer */}
+          <circle cx={pointer.x} cy={pointer.y} r="11" fill={gaugeColor} stroke="white" strokeWidth="3.5" />
+          {/* Hero percentage – centered inside the gauge */}
+          <text x={cx} y={cy - 45} textAnchor="middle" dominantBaseline="auto">
+            <tspan style={{ fontSize: '78px', fontWeight: 700, fill: '#0f172a', letterSpacing: '-0.04em' }}>{value.toFixed(1)}</tspan>
+            <tspan dx="2" style={{ fontSize: '40px', fontWeight: 600, fill: '#64748b' }}>%</tspan>
+          </text>
+          <text x={cx} y={cy - 8} textAnchor="middle" style={{ fontSize: '13px', fontWeight: 600, fill: '#94a3b8', letterSpacing: '0.08em' }}>
+            MARGEM DO PERIODO
+          </text>
+        </svg>
+        {delta != null && (
+          <p className={`-mt-2 text-sm font-medium ${delta >= 0 ? 'delta-positive' : 'delta-negative'}`}>
+            {formatDeltaPP(delta)} vs. anterior
+          </p>
+        )}
       </div>
-      <p className="break-words text-lg font-semibold tracking-[-0.03em] text-slate-900 [overflow-wrap:anywhere]">{value}</p>
-      <p className={`mt-2 text-xs font-medium ${color}`}>
-        {delta == null ? 'Sem base comparativa' : isPercent ? formatDeltaPP(delta) : `${formatDeltaPct(delta)} vs ant.`}
-      </p>
     </div>
   );
 }
@@ -928,11 +893,11 @@ function KPIBandCard({
       : deltaPct >= 0 ? 'delta-negative' : 'delta-positive';
 
   return (
-    <div className={`card-premium bg-gradient-to-br ${accents} p-5`}>
+    <div className={`card-premium bg-gradient-to-br ${accents} p-4 sm:p-5`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-500">{title}</p>
+          <div className="flex items-center gap-1">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.11em] text-slate-500 sm:text-[11px]">{title}</p>
             {tooltip ? (
               <div className="group/tip relative">
                 <Info className="h-3.5 w-3.5 cursor-help text-slate-300" />
@@ -942,13 +907,15 @@ function KPIBandCard({
               </div>
             ) : null}
           </div>
-          <p className="metric-value-fluid mt-3 text-slate-900">{value}</p>
-          <p className={`mt-2 text-xs font-medium ${deltaColor}`}>
+          <p className="mt-2.5 overflow-hidden whitespace-nowrap text-[clamp(1.2rem,1.3vw,1.85rem)] font-semibold leading-none tracking-[-0.05em] tabular-nums text-slate-900">
+            {value}
+          </p>
+          <p className={`mt-1.5 text-xs font-medium ${deltaColor}`}>
             {deltaPct == null ? 'Sem comparacao' : `${formatDeltaPct(deltaPct)} vs ant.`}
           </p>
-          {subtext ? <p className="mt-1 text-xs text-slate-500">{subtext}</p> : null}
+          {subtext ? <p className="mt-1.5 text-xs leading-4.5 text-slate-500">{subtext}</p> : null}
         </div>
-        <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white/85 text-slate-700 shadow-sm">
+        <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white/85 text-slate-700 shadow-sm sm:h-11 sm:w-11">
           {icon}
         </div>
       </div>
@@ -1068,16 +1035,16 @@ function ChartCard({
 }) {
   return (
     <div className="card-premium overflow-hidden p-0">
-      <div className="border-b border-slate-200/70 bg-gradient-to-r from-white via-white to-slate-50/80 px-6 py-5">
-        <div className="flex items-center gap-3">
-          {icon ? <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-600">{icon}</span> : null}
+      <div className="border-b border-slate-200/70 bg-gradient-to-r from-white via-white to-slate-50/80 px-6 py-4">
+        <div className="flex items-center gap-2.5">
+          {icon ? <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100/80 text-slate-500">{icon}</span> : null}
           <div>
-            <h3 className="text-lg font-semibold tracking-[-0.02em] text-slate-900">{title}</h3>
-            {subtitle ? <p className="mt-1 text-sm text-slate-500">{subtitle}</p> : null}
+            <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-slate-900">{title}</h3>
+            {subtitle ? <p className="mt-0.5 text-[13px] leading-5 text-slate-500">{subtitle}</p> : null}
           </div>
         </div>
       </div>
-      <div className={`px-4 py-5 sm:px-6 ${heightClass ?? ''}`}>
+      <div className={`px-4 py-4 sm:px-5 ${heightClass ?? ''}`}>
         {children}
       </div>
     </div>
@@ -1096,32 +1063,6 @@ function QualityBadge({ label, count, variant }: { label: string; count: number;
       {label}
       <span>{count}</span>
     </span>
-  );
-}
-
-function DeltaIndicator({ value, pct, positiveIsGood = true }: { value?: number | null; pct?: number | null; positiveIsGood?: boolean }) {
-  const getColor = (v: number) => {
-    if (positiveIsGood) return v >= 0 ? 'delta-positive' : 'delta-negative';
-    return v >= 0 ? 'delta-negative' : 'delta-positive';
-  };
-  const getIcon = (v: number) => {
-    if (v > 0) return <ArrowUpRight className="h-3 w-3" />;
-    if (v < 0) return <ArrowDownRight className="h-3 w-3" />;
-    return <Minus className="h-3 w-3" />;
-  };
-
-  return (
-    <>
-      {value !== null && value !== undefined ? (
-        <span className={`inline-flex items-center gap-0.5 text-xs font-medium ${getColor(value)}`}>
-          {getIcon(value)}
-          {formatDeltaValue(value)}
-        </span>
-      ) : null}
-      {pct !== null && pct !== undefined ? (
-        <span className={`text-[11px] ${getColor(pct)}`}>({formatDeltaPct(pct)})</span>
-      ) : null}
-    </>
   );
 }
 

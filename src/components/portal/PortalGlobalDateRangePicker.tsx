@@ -7,11 +7,13 @@ export function PortalGlobalDateRangePicker({ className = '' }: { className?: st
   const { dateRange, setDateRange, clear } = usePortalDateRange();
 
   return (
-    <GlobalDateRangeControl
-      className={className}
-      emptyLabel="Período da carteira"
-      emptyDetail="Período definido pela base do investidor"
-      controller={{ dateRange, setDateRange, clear }}
-    />
+    <div data-portal-tour="global-filter">
+      <GlobalDateRangeControl
+        className={className}
+        emptyLabel="Período da carteira"
+        emptyDetail="Período definido pela base do investidor"
+        controller={{ dateRange, setDateRange, clear }}
+      />
+    </div>
   );
 }

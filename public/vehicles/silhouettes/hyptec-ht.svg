@@ -1,0 +1,15 @@
+<svg viewBox="65 50 520 210" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <ellipse cx="325" cy="242" rx="218" ry="7" fill="#0F2439" opacity="0.18"/>
+  <path d="M88 195 L82 172 L98 155 L164 136 L196 130 L228 78 L395 76 L435 80 L468 126 L480 132 L520 132 L548 148 L566 164 L570 178 L572 195 L504 195 A26 26 0 0 1 452 195 L194 195 A26 26 0 0 1 142 195 Z" fill="#0F2439"/>
+  <path d="M200 134 L231 82 L315 80 L315 132 Z M319 80 L391 78 L431 82 L464 124 L319 132 Z" fill="#4DB8D9"/>
+  <line x1="98" y1="157" x2="566" y2="164" stroke="#1A5276" stroke-width="1.2" opacity="0.4"/>
+  <line x1="317" y1="132" x2="315" y2="195" stroke="#1A5276" stroke-width="1" opacity="0.3"/>
+  <rect x="79" y="168" width="14" height="8" rx="2" fill="#7B68EE" opacity="0.6"/>
+  <rect x="562" y="162" width="8" height="14" rx="2" fill="#7B68EE" opacity="0.55"/>
+  <circle cx="168" cy="215" r="22" fill="#081C2E"/>
+  <circle cx="168" cy="215" r="14" fill="#1E5B78"/>
+  <circle cx="168" cy="215" r="5" fill="#2A8CAD"/>
+  <circle cx="478" cy="215" r="22" fill="#081C2E"/>
+  <circle cx="478" cy="215" r="14" fill="#1E5B78"/>
+  <circle cx="478" cy="215" r="5" fill="#2A8CAD"/>
+</svg>

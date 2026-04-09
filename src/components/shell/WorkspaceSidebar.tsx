@@ -10,6 +10,8 @@ interface WorkspaceSidebarProps {
   groups: ShellNavGroup[];
   footer: React.ReactNode;
   buildHref?: (href: string) => string;
+  getGroupProps?: (groupLabel: string) => React.HTMLAttributes<HTMLDivElement> | undefined;
+  getItemProps?: (href: string) => React.HTMLAttributes<HTMLAnchorElement> | undefined;
   compact?: boolean;
   className?: string;
 }
@@ -23,6 +25,8 @@ export function WorkspaceSidebar({
   groups,
   footer,
   buildHref = (href) => href,
+  getGroupProps,
+  getItemProps,
   compact = false,
   className,
 }: WorkspaceSidebarProps) {
@@ -50,7 +54,7 @@ export function WorkspaceSidebar({
 
       <nav className="relative flex-1 space-y-6 overflow-y-auto px-3 pb-4 pt-2 scrollbar-none">
         {groups.map((group) => (
-          <div key={group.label}>
+          <div key={group.label} {...getGroupProps?.(group.label)}>
             <p className="mb-3 px-3 text-[11px] font-bold uppercase tracking-[0.06em] text-[#A8CF4C]">
               {group.label}
             </p>
@@ -80,6 +84,7 @@ export function WorkspaceSidebar({
                   <Link
                     key={item.href}
                     href={buildHref(item.href)}
+                    {...getItemProps?.(item.href)}
                     className={cn(
                       'relative flex items-center gap-3 rounded-2xl px-3.5 py-3 text-[13px] font-medium transition-all duration-200',
                       isActive

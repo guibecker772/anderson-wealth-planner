@@ -104,6 +104,7 @@ export interface WorkbookDashboardData {
     fleetStates: Array<{ status: string; count: number }>;
     qualitySummary: Record<OperationalQualityStatus, number>;
     snapshotCount: number;
+    latestReferenceDate: string | null;
   };
 }
 
@@ -734,6 +735,10 @@ export async function getDashboardData(db: PrismaClient, dateRange: DateRangeStr
     snapshots.reduce((acc, row) => acc + (toNumber(row.amountToCharge) || toNumber(row.contractValue)), 0)
   );
   const operationalPending = clampMoney(snapshots.reduce((acc, row) => acc + toNumber(row.openAmount), 0));
+  const latestReferenceDate = snapshots.reduce<Date | null>(
+    (latest, row) => (latest === null || isAfter(row.referenceDate, latest) ? row.referenceDate : latest),
+    null
+  );
   const fleetStatesMap = new Map<string, number>();
   for (const row of snapshots) {
     const key = row.vehicleStatusNormalized || 'Sem status';
@@ -815,6 +820,7 @@ export async function getDashboardData(db: PrismaClient, dateRange: DateRangeStr
       fleetStates: Array.from(fleetStatesMap.entries()).map(([status, count]) => ({ status, count })),
       qualitySummary: summarizeQuality(snapshots),
       snapshotCount: snapshots.length,
+      latestReferenceDate: latestReferenceDate ? format(latestReferenceDate, 'yyyy-MM-dd') : null,
     },
   };
 }

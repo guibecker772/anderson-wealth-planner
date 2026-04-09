@@ -18,7 +18,7 @@ export function usePortalFleetData() {
   const hasExplicitRange = Boolean(from && to);
   const isImpersonating = Boolean(impersonateId) && session?.user?.role === 'ADMIN';
   const investorName = isImpersonating
-    ? 'Investidor (visualizacao admin)'
+    ? 'Investidor em visualização administrativa'
     : (session?.user?.investorName || session?.user?.name || 'Investidor');
   const {
     dateRange: globalDateRange,
@@ -48,11 +48,11 @@ export function usePortalFleetData() {
 
         const res = await fetch(`/api/portal/fleet?${params.toString()}`);
         if (res.status === 401) {
-          setError('Sessao expirada. Faca login novamente.');
+          setError('Sessão expirada. Faça login novamente.');
           return;
         }
         if (res.status === 403) {
-          setError('Acesso nao autorizado.');
+          setError('Acesso não autorizado.');
           return;
         }
         if (!res.ok) throw new Error('Falha ao carregar dados do portal');

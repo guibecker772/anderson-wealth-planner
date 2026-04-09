@@ -1,5 +1,13 @@
 import type { DateRangeStrings } from '@/lib/dateRange';
 
+export const PORTAL_FLEET_FILTER_PARAM_KEYS = [
+  'fleetStatus',
+  'fleetSearch',
+  'fleetAlert',
+  'fleetCharge',
+  'fleetQuality',
+] as const;
+
 function isValidDateRange(from: string | null, to: string | null) {
   return Boolean(from && to && /^\d{4}-\d{2}-\d{2}$/.test(from) && /^\d{4}-\d{2}-\d{2}$/.test(to));
 }
@@ -64,6 +72,17 @@ export function getPortalNavigationSearchParams(currentSearch: string | URLSearc
   }
 
   return nextParams;
+}
+
+export function hasPortalFleetFilterState(currentSearch: string | URLSearchParams) {
+  const source = new URLSearchParams(
+    typeof currentSearch === 'string' ? currentSearch : currentSearch.toString()
+  );
+
+  return PORTAL_FLEET_FILTER_PARAM_KEYS.some((key) => {
+    const value = source.get(key);
+    return Boolean(value && value.trim() !== '');
+  });
 }
 
 export function buildPortalNavigationHref(

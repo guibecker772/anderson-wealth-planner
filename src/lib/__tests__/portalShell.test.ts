@@ -2,6 +2,7 @@ import {
   buildPortalHref,
   buildPortalNavigationHref,
   getPortalDateRangeFromSearchParams,
+  hasPortalFleetFilterState,
 } from '@/lib/portalShell';
 
 describe('portalShell', () => {
@@ -35,5 +36,15 @@ describe('portalShell', () => {
     );
 
     expect(href).toBe('/portal/multas?from=2026-04-01&to=2026-04-30&_as=inv_1');
+  });
+
+  it('detects local fleet filters in the investor portal url', () => {
+    expect(
+      hasPortalFleetFilterState('from=2026-04-01&to=2026-04-30&fleetStatus=Locado&fleetAlert=1')
+    ).toBe(true);
+
+    expect(
+      hasPortalFleetFilterState('from=2026-04-01&to=2026-04-30&_as=inv_1')
+    ).toBe(false);
   });
 });

@@ -1,11 +1,14 @@
 'use client';
 
+import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { PortalNav } from '@/components/portal/PortalNav';
+import { PortalOnboarding } from '@/components/portal/PortalOnboarding';
 import { PortalTopbar } from '@/components/portal/PortalTopbar';
 
 export function PortalShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [onboardingOpenRequest, setOnboardingOpenRequest] = useState(0);
   const isReportRoute = pathname === '/portal/relatorio';
 
   if (isReportRoute) {
@@ -24,7 +27,7 @@ export function PortalShell({ children }: { children: React.ReactNode }) {
 
       <main className="relative z-10 min-h-screen px-4 pb-10 pt-6 sm:px-6 lg:ml-72 lg:px-6 lg:pt-24">
         <div className={`mx-auto w-full max-w-[1600px] animate-in ${isPasswordRoute ? 'max-w-5xl' : ''}`}>
-          <PortalTopbar />
+          <PortalTopbar onOpenGuide={() => setOnboardingOpenRequest((value) => value + 1)} />
           <div className="mb-5 block lg:hidden">
             <div className="overflow-hidden rounded-[24px] border border-white/60 bg-white/90 shadow-sm backdrop-blur-xl">
               <PortalNav compact />
@@ -33,6 +36,11 @@ export function PortalShell({ children }: { children: React.ReactNode }) {
           {children}
         </div>
       </main>
+
+      <PortalOnboarding
+        enabled={!isPasswordRoute}
+        openRequest={onboardingOpenRequest}
+      />
     </div>
   );
 }

@@ -53,6 +53,6 @@ export const config = {
      * - /_next (Next.js internals)
      * - /brand, /favicon (static assets)
      */
-    '/((?!login|api/auth|api/health|_next|brand|favicon).*)',
+    '/((?!login|api/auth|api/health|_next|brand|favicon|vehicles).*)',
   ],
 };

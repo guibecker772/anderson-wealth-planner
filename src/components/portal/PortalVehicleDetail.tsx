@@ -8,13 +8,15 @@ import {
   AlertTriangle,
   ArrowLeft,
   Calendar,
+  CalendarDays,
   Car,
   ChevronLeft,
   ChevronRight,
+  Clock3,
   DollarSign,
   Download,
   Filter,
-  Hash,
+  Inbox,
   Loader2,
   Search,
   ShieldCheck,
@@ -35,6 +37,8 @@ import type {
   WeeklyEvolutionPoint,
 } from '@/lib/analytics/fleet-metrics';
 import { usePortalDateRange } from '@/components/portal/PortalDateRangeContext';
+import { PortalContextStat, PortalEmptyState, PortalInfoTooltip } from '@/components/portal/PortalSupport';
+import { buildPortalHref, hasPortalFleetFilterState } from '@/lib/portalShell';
 
 // ---------------------------------------------------------------------------
 // Formatters
@@ -53,10 +57,18 @@ function formatDate(iso: string): string {
   return `${d}/${m}/${y}`;
 }
 
+function formatDateRangeLabel(from: string, to: string): string {
+  return `${formatDate(from)} – ${formatDate(to)}`;
+}
+
 function formatDelta(value: number | null): string {
   if (value === null) return '—';
   const prefix = value > 0 ? '+' : '';
   return `${prefix}${formatCurrency(value)}`;
+}
+
+function formatDriverDisplay(value: string | null): string {
+  return value && value.trim() !== '' ? value : 'Não identificado no período';
 }
 
 function getStatusVariant(status: string): 'success' | 'warning' | 'info' | 'error' | 'secondary' {
@@ -133,7 +145,7 @@ function exportSnapshotsCSV(snapshots: VehicleSnapshotRow[], plate: string, date
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `${plate}_snapshots_${dateFrom}_${dateTo}.csv`;
+  link.download = `${plate}_historico_${dateFrom}_${dateTo}.csv`;
   link.click();
   URL.revokeObjectURL(url);
 }
@@ -199,9 +211,8 @@ export function PortalVehicleDetail({ plate }: { plate: string }) {
     [data, snapshotFilter, snapshotSearch],
   );
 
-  const backHref = dateRange
-    ? `/portal?from=${dateRange.from}&to=${dateRange.to}${impersonateId ? `&_as=${impersonateId}` : ''}`
-    : (impersonateId ? `/portal?_as=${impersonateId}` : '/portal');
+  const hasFleetContext = hasPortalFleetFilterState(searchParams);
+  const backHref = buildPortalHref(hasFleetContext ? '/portal/frota' : '/portal', searchParams);
 
   if (loading) {
     return <div className="flex h-[400px] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-slate-400" /></div>;
@@ -213,21 +224,28 @@ export function PortalVehicleDetail({ plate }: { plate: string }) {
         <Link href={backHref} className="inline-flex items-center gap-1.5 text-sm font-medium text-[#022D44]/70 hover:text-[#022D44] transition-colors">
           <ArrowLeft className="h-4 w-4" /> Voltar ao painel
         </Link>
-        <div className="flex h-[300px] flex-col items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <AlertTriangle className="h-6 w-6 text-red-400" />
-          <p className="text-base font-medium text-slate-700">{error || 'Veículo não encontrado'}</p>
-        </div>
+        <PortalEmptyState
+          icon={<AlertTriangle className="h-6 w-6" />}
+          title="Não foi possível abrir o detalhe do veículo"
+          description={error || 'Tente novamente em instantes ou volte para a visão anterior da carteira.'}
+        />
       </div>
     );
   }
 
   const { kpis, snapshots, comparison, weeklyEvolution, neighbors } = data;
   const alertCount = kpis.qualitySummary.WARNING + kpis.qualitySummary.REVIEW_REQUIRED;
+  const latestReferenceDateLabel = data.latestReferenceDate ? formatDate(data.latestReferenceDate) : null;
+  const previousVehicleHref = neighborsHref(searchParams, neighbors.prev);
+  const nextVehicleHref = neighborsHref(searchParams, neighbors.next);
+  function neighborsHref(currentSearch: URLSearchParams, neighborPlate: string | null) {
+    if (!neighborPlate) return null;
+    return buildPortalHref(`/portal/veiculos/${encodeURIComponent(neighborPlate)}`, currentSearch);
+  }
   const heroMeta = (
     <>
       <Badge variant={getStatusVariant(data.currentStatus)} size="sm">{data.currentStatus}</Badge>
       {alertCount > 0 ? <Badge variant="warning" size="sm">{alertCount} alerta(s)</Badge> : <Badge variant="success" size="sm">Base monitorada</Badge>}
-      <Badge variant="secondary" size="sm">{kpis.snapshotCount} snapshot(s)</Badge>
     </>
   );
   const heroActions = (
@@ -235,29 +253,55 @@ export function PortalVehicleDetail({ plate }: { plate: string }) {
       <Link href={backHref} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-[#022D44]/80 transition-colors hover:bg-slate-50 hover:text-[#022D44]">
         <ArrowLeft className="h-4 w-4" /> Voltar ao painel
       </Link>
-      {neighbors.prev ? (
-        <Link href={`/portal/veiculos/${encodeURIComponent(neighbors.prev)}?from=${dateRange.from}&to=${dateRange.to}${impersonateId ? `&_as=${impersonateId}` : ''}`} className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50">
+      {previousVehicleHref ? (
+        <Link href={previousVehicleHref} className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50">
           <ChevronLeft className="h-3.5 w-3.5" /> {neighbors.prev}
         </Link>
       ) : null}
-      {neighbors.next ? (
-        <Link href={`/portal/veiculos/${encodeURIComponent(neighbors.next)}?from=${dateRange.from}&to=${dateRange.to}${impersonateId ? `&_as=${impersonateId}` : ''}`} className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50">
+      {nextVehicleHref ? (
+        <Link href={nextVehicleHref} className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50">
           {neighbors.next} <ChevronRight className="h-3.5 w-3.5" />
         </Link>
       ) : null}
     </>
   );
+  const heroContext = (
+    <div className="grid gap-3 md:grid-cols-3">
+      {latestReferenceDateLabel ? (
+        <PortalContextStat
+          label="Última leitura disponível"
+          value={latestReferenceDateLabel}
+          description="Data mais recente registrada para este veículo dentro do recorte consultado."
+          icon={<Clock3 className="h-4 w-4" />}
+        />
+      ) : null}
+      <PortalContextStat
+        label="Período aplicado"
+        value={formatDateRangeLabel(dateRange.from, dateRange.to)}
+        description="Os gráficos, totais e registros abaixo seguem esse mesmo intervalo."
+        icon={<CalendarDays className="h-4 w-4" />}
+      />
+      <PortalContextStat
+        label="Locatário exibido"
+        value={formatDriverDisplay(data.driver)}
+        description="Usa o último locatário conhecido até a data final do período selecionado."
+        icon={<User className="h-4 w-4" />}
+      />
+    </div>
+  );
 
   return (
     <div className="space-y-6">
       <PageHero
-        eyebrow="Frota / Operacoes"
+        eyebrow="Frota / Operações"
         title={data.plate}
-        description={`${data.model || 'Veiculo monitorado'}${data.driver ? ` • ${data.driver}` : ''} • Periodo ${formatDate(dateRange.from)} - ${formatDate(dateRange.to)}.`}
+        description={`${data.model || 'Veículo monitorado'} • Locatário ${formatDriverDisplay(data.driver)} • Período ${formatDate(dateRange.from)} - ${formatDate(dateRange.to)}.`}
         accent="blue"
         meta={heroMeta}
         actions={heroActions}
-      />
+      >
+        {heroContext}
+      </PageHero>
       {/* ── Navigation ── */}
       <div className="hidden flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <Link href={backHref} className="inline-flex items-center gap-1.5 text-sm font-medium text-[#022D44]/70 hover:text-[#022D44] transition-colors">
@@ -287,14 +331,14 @@ export function PortalVehicleDetail({ plate }: { plate: string }) {
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-slate-600">
           {data.model && <span className="flex items-center gap-1.5"><Car className="h-3.5 w-3.5 text-slate-400" />{data.model}</span>}
-          {data.driver && <span className="flex items-center gap-1.5"><User className="h-3.5 w-3.5 text-slate-400" />{data.driver}</span>}
+          <span className="flex items-center gap-1.5"><User className="h-3.5 w-3.5 text-slate-400" />{formatDriverDisplay(data.driver)}</span>
           <span className="text-slate-400">|</span>
           <span className="text-slate-500">{formatDate(dateRange.from)} – {formatDate(dateRange.to)}</span>
         </div>
       </div>
 
       {/* ── Quality summary ── */}
-      <QualitySummaryBlock quality={kpis.qualitySummary} total={kpis.snapshotCount} />
+      <QualitySummaryBlock quality={kpis.qualitySummary} />
 
       {/* ── KPIs ── */}
       <ComparisonKPIs comparison={comparison} />
@@ -302,12 +346,15 @@ export function PortalVehicleDetail({ plate }: { plate: string }) {
       {/* ── Weekly chart ── */}
       {weeklyEvolution.length > 1 && <WeeklyEvolutionChart data={weeklyEvolution} />}
 
-      {/* ── Snapshot history ── */}
+      {/* ── Vehicle history ── */}
       <div className="overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/70 px-6 py-5">
           <div className="flex items-center gap-3">
             <Calendar className="h-5 w-5 text-[#022D44]" />
-            <h2 className="text-lg font-semibold tracking-tight text-slate-900">Histórico de snapshots</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold tracking-tight text-slate-900">Histórico do veículo</h2>
+              <PortalInfoTooltip content="Cada linha reúne uma leitura operacional registrada para o veículo dentro do período selecionado." />
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <Badge variant="secondary">{filteredSnapshots.length} de {snapshots.length}</Badge>
@@ -328,7 +375,7 @@ export function PortalVehicleDetail({ plate }: { plate: string }) {
             <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Motorista, status, data…"
+              placeholder="Locatário, status, data…"
               value={snapshotSearch}
               onChange={(e) => setSnapshotSearch(e.target.value)}
               className="h-8 w-52 rounded-full border border-slate-200 bg-white pl-8 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-[#022D44]/30 focus:outline-none focus:ring-2 focus:ring-[#022D44]/10"
@@ -351,6 +398,10 @@ export function PortalVehicleDetail({ plate }: { plate: string }) {
               <X className="h-3 w-3" /> Limpar
             </button>
           )}
+          <span className="ml-auto inline-flex items-center gap-1.5 text-xs text-slate-500">
+            Qualidade
+            <PortalInfoTooltip content="Indica se a leitura do período está consistente, em alerta ou pedindo revisão." />
+          </span>
         </div>
 
         <div className="overflow-x-auto">
@@ -360,7 +411,7 @@ export function PortalVehicleDetail({ plate }: { plate: string }) {
                 <th className="px-6 py-4 text-left font-semibold text-slate-500">Data</th>
                 <th className="px-6 py-4 text-right font-semibold text-slate-500">Sem.</th>
                 <th className="px-6 py-4 text-left font-semibold text-slate-500">Status</th>
-                <th className="px-6 py-4 text-left font-semibold text-slate-500">Motorista</th>
+                <th className="px-6 py-4 text-left font-semibold text-slate-500">Locatário</th>
                 <th className="px-6 py-4 text-right font-semibold text-slate-500">Contrato</th>
                 <th className="px-6 py-4 text-right font-semibold text-slate-500">Recebido</th>
                 <th className="px-6 py-4 text-right font-semibold text-slate-500">Manutenção</th>
@@ -399,7 +450,15 @@ export function PortalVehicleDetail({ plate }: { plate: string }) {
               })}
               {filteredSnapshots.length === 0 && (
                 <tr>
-                  <td colSpan={12} className="px-6 py-10 text-center text-slate-500">Nenhum snapshot encontrado.</td>
+                  <td colSpan={12} className="px-6 py-8">
+                    <PortalEmptyState
+                      compact
+                      icon={<Inbox className="h-6 w-6" />}
+                      title="Nenhum registro encontrado"
+                      description="O filtro atual não encontrou leituras para este veículo. Limpe a busca ou ajuste o filtro de histórico para continuar."
+                      className="border-0 bg-transparent px-0 py-2 shadow-none"
+                    />
+                  </td>
                 </tr>
               )}
             </tbody>
@@ -414,7 +473,7 @@ export function PortalVehicleDetail({ plate }: { plate: string }) {
 // Sub-components
 // ---------------------------------------------------------------------------
 
-function QualitySummaryBlock({ quality, total }: { quality: Record<string, number>; total: number }) {
+function QualitySummaryBlock({ quality }: { quality: Record<string, number> }) {
   const ok = quality.OK ?? 0;
   const warn = quality.WARNING ?? 0;
   const review = quality.REVIEW_REQUIRED ?? 0;
@@ -426,14 +485,16 @@ function QualitySummaryBlock({ quality, total }: { quality: Record<string, numbe
     <div className="rounded-2xl border border-slate-200/70 bg-white p-6 shadow-sm">
       <div className="flex items-center gap-3 mb-4">
         <ShieldCheck className="h-5 w-5 text-slate-500" />
-        <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Qualidade operacional</h3>
+        <div className="flex items-center gap-2">
+          <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Qualidade operacional</h3>
+          <PortalInfoTooltip content="Mostra se as leituras do período estão consistentes, com alerta ou pedindo revisão." />
+        </div>
         <Badge variant={overallVariant} size="sm">{overallStatus}</Badge>
       </div>
       <div className="flex flex-wrap gap-3">
         <QualityChip label="OK" count={ok} variant="success" />
         <QualityChip label="Alerta" count={warn} variant="warning" />
         <QualityChip label="Requer revisão" count={review} variant="error" />
-        <span className="ml-auto text-xs text-slate-500 self-center">{total} snapshot(s)</span>
       </div>
     </div>
   );
@@ -455,11 +516,10 @@ function ComparisonKPIs({ comparison }: { comparison: PeriodComparison }) {
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <ComparisonCard title="Snapshots" current={String(current.snapshotCount)} previous={hasPrevious ? String(previous!.snapshotCount) : null} deltaRaw={deltas.snapshotCount} isCount icon={<Hash className="h-5 w-5" />} tone="slate" />
       <ComparisonCard title="Receita" current={formatCurrency(current.totalRevenueReceived)} previous={hasPrevious ? formatCurrency(previous!.totalRevenueReceived) : null} deltaRaw={deltas.totalRevenueReceived} positiveIsGood icon={<TrendingUp className="h-5 w-5" />} tone="emerald" />
       <ComparisonCard title="Custo" current={formatCurrency(current.totalOperationalCost)} previous={hasPrevious ? formatCurrency(previous!.totalOperationalCost) : null} deltaRaw={deltas.totalOperationalCost} positiveIsGood={false} icon={<TrendingDown className="h-5 w-5" />} tone="red" />
-      <ComparisonCard title="A cobrar" current={formatCurrency(current.totalAmountToCharge)} previous={hasPrevious ? formatCurrency(previous!.totalAmountToCharge) : null} deltaRaw={deltas.totalAmountToCharge} icon={<DollarSign className="h-5 w-5" />} tone="amber" />
-      <ComparisonCard title="Resultado" current={formatCurrency(current.operationalResult)} previous={hasPrevious ? formatCurrency(previous!.operationalResult) : null} deltaRaw={deltas.operationalResult} positiveIsGood icon={<DollarSign className="h-5 w-5" />} tone={current.operationalResult >= 0 ? 'emerald' : 'red'} />
+      <ComparisonCard title="A cobrar" tooltip="Valor operacional previsto para cobrança e ainda não refletido como recebido." current={formatCurrency(current.totalAmountToCharge)} previous={hasPrevious ? formatCurrency(previous!.totalAmountToCharge) : null} deltaRaw={deltas.totalAmountToCharge} icon={<DollarSign className="h-5 w-5" />} tone="amber" />
+      <ComparisonCard title="Resultado" tooltip="Diferença entre a receita recebida e os custos operacionais do período." current={formatCurrency(current.operationalResult)} previous={hasPrevious ? formatCurrency(previous!.operationalResult) : null} deltaRaw={deltas.operationalResult} positiveIsGood icon={<DollarSign className="h-5 w-5" />} tone={current.operationalResult >= 0 ? 'emerald' : 'red'} />
       <div className="flex items-center justify-center rounded-2xl border border-slate-200/70 bg-white p-5 shadow-sm">
         <div className="text-center">
           <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">{hasPrevious ? 'Período anterior' : 'Comparação'}</p>
@@ -470,14 +530,13 @@ function ComparisonKPIs({ comparison }: { comparison: PeriodComparison }) {
   );
 }
 
-function ComparisonCard({ title, current, previous, deltaRaw, positiveIsGood, isCount, icon, tone }: {
-  title: string; current: string; previous: string | null; deltaRaw: number | null; positiveIsGood?: boolean; isCount?: boolean; icon: ReactNode; tone: 'emerald' | 'red' | 'amber' | 'slate';
+function ComparisonCard({ title, current, previous, deltaRaw, positiveIsGood, icon, tone, tooltip }: {
+  title: string; current: string; previous: string | null; deltaRaw: number | null; positiveIsGood?: boolean; icon: ReactNode; tone: 'emerald' | 'red' | 'amber' | 'slate'; tooltip?: string;
 }) {
   let deltaText = '';
   let deltaColor = 'text-slate-400';
   if (deltaRaw !== null) {
-    const prefix = deltaRaw > 0 ? '+' : '';
-    deltaText = isCount ? `${prefix}${deltaRaw}` : formatDelta(deltaRaw);
+    deltaText = formatDelta(deltaRaw);
     if (positiveIsGood !== undefined) {
       const good = positiveIsGood ? deltaRaw > 0 : deltaRaw < 0;
       const bad = positiveIsGood ? deltaRaw < 0 : deltaRaw > 0;
@@ -491,7 +550,10 @@ function ComparisonCard({ title, current, previous, deltaRaw, positiveIsGood, is
     <div className={`rounded-2xl border bg-white p-5 shadow-sm ${toneClass}`}>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">{title}</p>
+          <div className="flex items-center gap-1.5">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">{title}</p>
+            {tooltip ? <PortalInfoTooltip content={tooltip} /> : null}
+          </div>
           <p className="mt-2 text-xl font-bold tabular-nums text-slate-900">{current}</p>
           {previous !== null && (
             <div className="mt-1.5 flex items-center gap-2 text-xs">

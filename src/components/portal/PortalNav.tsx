@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -37,6 +38,18 @@ export function PortalNav({ compact = false }: { compact?: boolean }) {
       buildHref={(href) => {
         if (isFirstLogin && href !== '/portal') return '/portal';
         return buildPortalNavigationHref(href, searchParams);
+      }}
+      getGroupProps={(groupLabel) => {
+        if (groupLabel === 'Financeiro') {
+          return { 'data-portal-tour': 'nav-financial' } as React.HTMLAttributes<HTMLDivElement>;
+        }
+
+        return undefined;
+      }}
+      getItemProps={(href) => {
+        if (href === '/portal') return { 'data-portal-tour': 'nav-overview' } as React.HTMLAttributes<HTMLAnchorElement>;
+        if (href === '/portal/frota') return { 'data-portal-tour': 'nav-fleet' } as React.HTMLAttributes<HTMLAnchorElement>;
+        return undefined;
       }}
       footer={(
         <div className="space-y-3">
