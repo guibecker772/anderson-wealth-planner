@@ -7,7 +7,6 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
-  LabelList,
   Legend,
   ReferenceLine,
   ResponsiveContainer,
@@ -158,17 +157,6 @@ const CHART_COLORS = {
   balance: '#022D44',
 };
 
-const CATEGORY_COLORS = [
-  '#022D44',
-  '#A8CF4C',
-  '#3b82f6',
-  '#f59e0b',
-  '#8b5cf6',
-  '#ec4899',
-  '#14b8a6',
-  '#f97316',
-];
-
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
@@ -204,7 +192,9 @@ export function DashboardCharts({
     : null;
   const analyticSeries = trimExecSeries(execData.series);
   const bucketLabel = bucket === 'month' ? 'mes' : 'semana';
-  const sortedCategories = [...topCategories].sort((a, b) => b.total - a.total);
+  const sortedCategories = [...topCategories]
+    .sort((a, b) => b.total - a.total)
+    .map((c) => ({ ...c, displayName: categoryDisplayLabel(c.category) }));
   const executiveKpis = [
     {
       title: 'Receita total',
@@ -651,7 +641,7 @@ export function DashboardCharts({
             title="Margem de lucro"
             subtitle="Resultado de caixa sobre a receita do periodo."
             icon={<DollarSign className="h-4 w-4 text-slate-500" />}
-            heightClass="h-[360px]"
+            heightClass="h-[320px]"
           >
             {execData.summary.margin != null ? (
               <MarginGauge
@@ -660,7 +650,7 @@ export function DashboardCharts({
               />
             ) : (
               <EmptyPanelState
-                heightClass="h-[360px]"
+                heightClass="h-[320px]"
                 message={isEmptyState ? 'A margem aparecera aqui depois da primeira importacao.' : 'Sem receita suficiente no periodo para calcular a margem'}
                 actionHref={emptyState?.actionHref}
                 actionLabel={emptyState?.actionLabel}
@@ -672,37 +662,13 @@ export function DashboardCharts({
             title="Valor gasto por categoria financeira"
             subtitle="Ranking das categorias que mais consumiram caixa no periodo."
             icon={<Receipt className="h-4 w-4 text-slate-500" />}
-            heightClass="h-[360px]"
+            heightClass="h-[320px]"
           >
             {sortedCategories.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={sortedCategories} layout="vertical" margin={{ top: 0, right: 95, left: 8, bottom: 0 }} barCategoryGap="24%">
-                  <XAxis type="number" hide />
-                  <YAxis
-                    type="category"
-                    dataKey="category"
-                    tick={{ fontSize: 13, fill: '#1e293b', fontWeight: 600 }}
-                    width={170}
-                    axisLine={false}
-                    tickLine={false}
-                    tickFormatter={(value: string) => (value.length > 24 ? `${value.slice(0, 23)}…` : value)}
-                  />
-                  <Tooltip
-                    formatter={(value: number) => [formatCurrencyFull(value), 'Total gasto']}
-                    labelStyle={{ fontWeight: 600, marginBottom: 2 }}
-                    contentStyle={tooltipStyle}
-                  />
-                  <Bar dataKey="total" name="Total gasto" radius={[0, 6, 6, 0]} barSize={24}>
-                    {sortedCategories.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
-                    ))}
-                    <LabelList dataKey="total" position="right" formatter={(value: number) => formatCurrency(value)} style={{ fontSize: 12, fontWeight: 700, fill: '#1e293b' }} />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+              <CategoryExpenseRanking categories={sortedCategories} />
             ) : (
               <EmptyPanelState
-                heightClass="h-[360px]"
+                heightClass="h-[320px]"
                 message={isEmptyState ? 'As categorias aparecerao aqui apos a importacao.' : 'Nenhum gasto categorizado no periodo selecionado'}
                 actionHref={emptyState?.actionHref}
                 actionLabel={emptyState?.actionLabel}
@@ -797,60 +763,187 @@ function trimExecSeries(series: ExecSeriesPoint[]): ExecSeriesPoint[] {
   return series.slice(firstIndex, lastIndex + 1);
 }
 
-function polarToCartesian(cx: number, cy: number, radius: number, angleInDegrees: number) {
-  const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0;
-  return {
-    x: cx + radius * Math.cos(angleInRadians),
-    y: cy + radius * Math.sin(angleInRadians),
+function categoryDisplayLabel(raw: string): string {
+  const map: Record<string, string> = {
+    'repasse': 'Repasse a investidores',
+    'repasse investidor': 'Repasse a investidores',
+    'repasse investidores': 'Repasse a investidores',
+    'custo operacional': 'Custo operacional',
+    'transferencia': 'Transferencias internas',
+    'transferencias': 'Transferencias internas',
+    'despesa fixa': 'Despesas fixas',
+    'despesas fixas': 'Despesas fixas',
+    'imposto': 'Impostos',
+    'impostos': 'Impostos',
+    'multa': 'Multas',
+    'multas': 'Multas',
+    'juro': 'Juros',
+    'juros': 'Juros',
+    'investimento': 'Investimentos',
+    'investimentos': 'Investimentos',
+    'manutencao': 'Manutencao',
+    'manutenção': 'Manutencao',
+    'combustivel': 'Combustivel',
+    'combustível': 'Combustivel',
+    'seguro': 'Seguro',
+    'seguros': 'Seguro',
+    'ipva': 'IPVA',
+    'documentacao': 'Documentacao',
+    'documentação': 'Documentacao',
+    'sem categoria': 'Sem categoria',
   };
+
+  let label = raw;
+  if (label.startsWith('Investimento: ')) {
+    label = label.slice('Investimento: '.length);
+  }
+
+  const lower = label
+    .toLowerCase()
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (map[lower]) return map[lower];
+
+  return lower
+    .split(' ')
+    .filter(Boolean)
+    .map((word, index) => (index > 0 && ['a', 'e', 'da', 'de', 'do', 'das', 'dos'].includes(word)
+      ? word
+      : word.charAt(0).toUpperCase() + word.slice(1)))
+    .join(' ');
 }
 
-function describeArc(cx: number, cy: number, radius: number, startAngle: number, endAngle: number) {
-  const start = polarToCartesian(cx, cy, radius, endAngle);
-  const end = polarToCartesian(cx, cy, radius, startAngle);
-  const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
-  return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`;
+function CategoryExpenseRanking({
+  categories,
+}: {
+  categories: Array<{ category: string; displayName: string; total: number; count: number }>;
+}) {
+  const maxTotal = Math.max(...categories.map((item) => item.total), 0);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const activeItem = activeCategory
+    ? categories.find((item) => item.category === activeCategory) ?? null
+    : null;
+
+  return (
+    <div className="flex h-full flex-col justify-center" onMouseLeave={() => setActiveCategory(null)}>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[18px] bg-slate-50/85 px-3.5 py-2.5">
+        <div className="flex flex-wrap items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+          <span className="inline-flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-full bg-[#022D44]" />
+            Maior gasto
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-full bg-slate-400/80" />
+            Demais categorias
+          </span>
+        </div>
+        <p className="text-xs font-medium text-slate-500">
+          {activeItem ? `${activeItem.displayName} • ${formatCurrencyFull(activeItem.total)}` : 'Passe o mouse nas barras para detalhar'}
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        {categories.map((item, index) => {
+          const fillWidth = maxTotal > 0 ? `${Math.max((item.total / maxTotal) * 100, 12)}%` : '0%';
+          const isLeader = index === 0;
+          const isActive = activeCategory === item.category;
+
+          return (
+            <button
+              type="button"
+              key={`${item.category}-${index}`}
+              className={`group relative grid w-full grid-cols-[minmax(0,150px)_minmax(0,1fr)_auto] items-center gap-3 rounded-[18px] border-0 bg-transparent px-1.5 py-1.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#022D44]/12 sm:grid-cols-[minmax(0,168px)_minmax(0,1fr)_auto] ${isActive ? 'bg-slate-50/80' : 'hover:bg-slate-50/55'}`}
+              onMouseEnter={() => setActiveCategory(item.category)}
+              onFocus={() => setActiveCategory(item.category)}
+              onBlur={() => setActiveCategory(null)}
+            >
+              <p className="text-sm font-semibold leading-5 text-slate-800 [overflow-wrap:anywhere]">
+                {item.displayName}
+              </p>
+              <div className="relative h-3 overflow-hidden rounded-full bg-slate-100">
+                <div
+                  className={`absolute inset-y-0 left-0 rounded-full transition-all ${isLeader ? 'bg-[#022D44]' : 'bg-slate-400/80'}`}
+                  style={{ width: fillWidth }}
+                />
+              </div>
+              <p className={`text-sm font-semibold tabular-nums ${isLeader ? 'text-slate-900' : 'text-slate-600'}`}>
+                {formatCurrency(item.total)}
+              </p>
+
+              <div
+                className={`pointer-events-none absolute right-2 z-10 hidden w-[240px] transition-opacity sm:block ${isActive ? 'opacity-100' : 'opacity-0'}`}
+                style={{ ...tooltipStyle, top: '-12px', transform: 'translateY(-100%)' }}
+              >
+                <div className="px-3 py-2.5">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">Categoria</p>
+                  <p className="mt-1 text-sm font-semibold leading-5 text-slate-900">{item.displayName}</p>
+                  <div className="mt-2 border-t border-slate-200/80 pt-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">Total gasto</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900">{formatCurrencyFull(item.total)}</p>
+                  </div>
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 function MarginGauge({ value, delta }: { value: number; delta: number | null }) {
   const clampedValue = Math.max(-100, Math.min(100, value));
-  const sweepAngle = ((clampedValue + 100) / 200) * 180;
-  const pointerAngle = sweepAngle - 180;
+  const progress = ((clampedValue + 100) / 200) * 100;
   const gaugeColor = clampedValue >= 30 ? '#22c55e' : clampedValue >= 0 ? '#f59e0b' : '#ef4444';
 
-  const cx = 200;
-  const cy = 190;
-  const r = 148;
-  const sw = 30;
-  const pointer = polarToCartesian(cx, cy, r, pointerAngle + 180);
+  const cx = 170;
+  const cy = 168;
+  const r = 110;
+  const sw = 22;
+  const gaugePath = `M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`;
+  const pointerAngle = 180 - (progress / 100) * 180;
+  const pointerRadians = (pointerAngle * Math.PI) / 180;
+  const pointer = {
+    x: cx + r * Math.cos(pointerRadians),
+    y: cy - r * Math.sin(pointerRadians),
+  };
 
   return (
-    <div className="flex h-full items-center justify-center">
-      <div className="flex w-full flex-col items-center">
-        <svg viewBox="0 0 400 225" className="w-full">
-          {/* Background track */}
-          <path d={describeArc(cx, cy, r, -180, 0)} fill="none" stroke="#e2e8f0" strokeWidth={sw} strokeLinecap="round" />
-          {/* Subtle color zones */}
-          <path d={describeArc(cx, cy, r, -180, -120)} fill="none" stroke="rgba(239,68,68,0.10)" strokeWidth={sw} strokeLinecap="round" />
-          <path d={describeArc(cx, cy, r, -120, -60)} fill="none" stroke="rgba(245,158,11,0.08)" strokeWidth={sw} strokeLinecap="round" />
-          <path d={describeArc(cx, cy, r, -60, 0)} fill="none" stroke="rgba(34,197,94,0.08)" strokeWidth={sw} strokeLinecap="round" />
-          {/* Value arc */}
-          {sweepAngle > 0.5 && (
-            <path d={describeArc(cx, cy, r, -180, -180 + sweepAngle)} fill="none" stroke={gaugeColor} strokeWidth={sw} strokeLinecap="round" />
-          )}
-          {/* Pointer */}
-          <circle cx={pointer.x} cy={pointer.y} r="11" fill={gaugeColor} stroke="white" strokeWidth="3.5" />
-          {/* Hero percentage – centered inside the gauge */}
-          <text x={cx} y={cy - 45} textAnchor="middle" dominantBaseline="auto">
-            <tspan style={{ fontSize: '78px', fontWeight: 700, fill: '#0f172a', letterSpacing: '-0.04em' }}>{value.toFixed(1)}</tspan>
-            <tspan dx="2" style={{ fontSize: '40px', fontWeight: 600, fill: '#64748b' }}>%</tspan>
-          </text>
-          <text x={cx} y={cy - 8} textAnchor="middle" style={{ fontSize: '13px', fontWeight: 600, fill: '#94a3b8', letterSpacing: '0.08em' }}>
-            MARGEM DO PERIODO
-          </text>
-        </svg>
+    <div className="flex h-full items-center justify-center px-4">
+      <div className="flex w-full max-w-[360px] flex-col items-center gap-3">
+        <div className="relative w-full">
+          <svg viewBox="0 0 340 220" className="mx-auto w-full overflow-visible">
+            <path d={gaugePath} fill="none" stroke="#dde6ee" strokeWidth={sw} strokeLinecap="round" pathLength={100} />
+            <path d={gaugePath} fill="none" stroke="rgba(239,68,68,0.12)" strokeWidth={sw} strokeLinecap="round" pathLength={100} strokeDasharray="33 67" />
+            <path d={gaugePath} fill="none" stroke="rgba(245,158,11,0.10)" strokeWidth={sw} strokeLinecap="round" pathLength={100} strokeDasharray="33 67" strokeDashoffset="-33" />
+            <path d={gaugePath} fill="none" stroke="rgba(34,197,94,0.10)" strokeWidth={sw} strokeLinecap="round" pathLength={100} strokeDasharray="34 66" strokeDashoffset="-66" />
+            {progress > 0.2 && (
+              <path d={gaugePath} fill="none" stroke={gaugeColor} strokeWidth={sw} strokeLinecap="round" pathLength={100} strokeDasharray={`${progress} 100`} />
+            )}
+            <circle cx={pointer.x} cy={pointer.y} r="8" fill={gaugeColor} stroke="white" strokeWidth="3" />
+          </svg>
+
+          <div className="pointer-events-none absolute inset-x-0 top-[62%] flex -translate-y-1/2 flex-col items-center">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+              Margem do periodo
+            </p>
+            <div className="mt-2 flex items-end gap-1">
+              <span className="text-[clamp(2.7rem,6vw,4rem)] font-semibold leading-none tracking-[-0.05em] text-slate-950">
+                {value.toFixed(1)}
+              </span>
+              <span className="pb-1 text-xl font-semibold text-slate-500">%</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex w-full items-center justify-between px-1 text-[11px] font-medium uppercase tracking-[0.12em] text-slate-400">
+          <span>-100%</span>
+          <span>100%</span>
+        </div>
+
         {delta != null && (
-          <p className={`-mt-2 text-sm font-medium ${delta >= 0 ? 'delta-positive' : 'delta-negative'}`}>
+          <p className={`text-sm font-medium ${delta >= 0 ? 'delta-positive' : 'delta-negative'}`}>
             {formatDeltaPP(delta)} vs. anterior
           </p>
         )}
