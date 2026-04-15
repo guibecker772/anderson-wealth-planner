@@ -5,6 +5,7 @@ import {
   AlertTriangle,
   ArrowDownCircle,
   ArrowUpCircle,
+  DatabaseZap,
   FileText,
   LayoutDashboard,
   Settings,
@@ -13,17 +14,18 @@ import {
   Truck,
   Users,
 } from 'lucide-react';
+
 import { WorkspaceSidebar } from '@/components/shell/WorkspaceSidebar';
 import type { ShellNavGroup } from '@/components/shell/types';
 
 const navGroups: ShellNavGroup[] = [
   {
-    label: 'Gestão',
+    label: 'Gestao',
     items: [
-      { href: '/dashboard', label: 'Visão Geral', icon: LayoutDashboard },
+      { href: '/dashboard', label: 'Visao Geral', icon: LayoutDashboard },
       { href: '/investidores', label: 'Investidores', icon: Users },
       { href: '/multas', label: 'Multas', icon: AlertTriangle },
-      { href: '/frota', label: 'Frota / Operação', icon: Truck },
+      { href: '/frota', label: 'Frota / Operacao', icon: Truck },
     ],
   },
   {
@@ -31,14 +33,15 @@ const navGroups: ShellNavGroup[] = [
     items: [
       { href: '/receitas', label: 'Receitas', icon: ArrowUpCircle },
       { href: '/despesas', label: 'Despesas', icon: ArrowDownCircle },
-      { href: '/relatorios', label: 'Relatórios', icon: FileText },
+      { href: '/relatorios', label: 'Relatorios', icon: FileText },
     ],
   },
   {
     label: 'Sistema',
     items: [
-      { href: '/configuracoes/usuarios', label: 'Gestão de Acessos', icon: ShieldCheck },
-      { href: '/configuracoes', label: 'Configurações', icon: Settings },
+      { href: '/importacoes', label: 'Centro de Importacoes', icon: DatabaseZap },
+      { href: '/configuracoes/usuarios', label: 'Gestao de Acessos', icon: ShieldCheck },
+      { href: '/configuracoes', label: 'Configuracoes', icon: Settings },
     ],
   },
 ];

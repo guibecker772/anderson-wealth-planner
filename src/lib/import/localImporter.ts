@@ -233,7 +233,7 @@ interface ParsedRow {
   operationalSnapshot: ParsedOperationalSnapshotRow | null;
 }
 
-interface ParsedOperationalSnapshotRow {
+export interface ParsedOperationalSnapshotRow {
   operationalKey: string;
   sheetName: string;
   sourceRowNumber: number;
@@ -314,7 +314,7 @@ interface WorksheetCandidate {
   kind: SourceFileKind;
 }
 
-interface ParsedFinancialEntryRow {
+export interface ParsedFinancialEntryRow {
   entryKey: string;
   sourceSheetName: string;
   sourceRowNumber: number;
@@ -332,7 +332,7 @@ interface ParsedFinancialEntryRow {
   rawJson: Record<string, unknown>;
 }
 
-interface ParsedFineRecordRow {
+export interface ParsedFineRecordRow {
   fineKey: string;
   sourceSheetName: string;
   sourceRowNumber: number;
@@ -353,7 +353,7 @@ interface ParsedFineRecordRow {
   rawJson: Record<string, unknown>;
 }
 
-interface SheetImportSummary {
+export interface SheetImportSummary {
   sheetName: string;
   domain: 'OPERATIONAL' | 'FINANCIAL' | 'FINES' | 'RESPONSIBILITY' | 'RECONCILIATION';
   totalRowsRead: number;
@@ -364,7 +364,7 @@ interface SheetImportSummary {
   note?: string | null;
 }
 
-interface ParseWorkbookResult {
+export interface ParseWorkbookResult {
   rows: ParsedRow[];
   operationalRows: ParsedOperationalSnapshotRow[];
   financialRows: ParsedFinancialEntryRow[];
@@ -2148,7 +2148,7 @@ function parseFineSheet(
   return { rows, fineRows, totalRowsRead, sheetWarnings };
 }
 
-async function parseWorkbookBuffer(buffer: Buffer, fileName: string, importDate = new Date()): Promise<ParseWorkbookResult> {
+export async function parseWorkbookBuffer(buffer: Buffer, fileName: string, importDate = new Date()): Promise<ParseWorkbookResult> {
   const workbook = new ExcelJS.Workbook();
   const workbookData = buffer as unknown as Parameters<ExcelJS.Workbook['xlsx']['load']>[0];
   await workbook.xlsx.load(workbookData);

@@ -5,6 +5,7 @@ import { db } from '@/lib/db';
 import { audit } from '@/lib/audit';
 
 export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET,
   session: { strategy: 'jwt', maxAge: 7 * 24 * 60 * 60 }, // 7 days
   pages: { signIn: '/login' },
   providers: [

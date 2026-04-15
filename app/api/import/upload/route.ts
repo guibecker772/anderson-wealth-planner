@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { importUploadedFiles } from '@/lib/import/localImporter';
+import { stageUploadedFiles } from '@/lib/import/stagingImporter';
 import { authorizeImportRequest } from '@/lib/import/auth';
 
 export const dynamic = 'force-dynamic';
@@ -50,17 +50,18 @@ export async function POST(request: NextRequest) {
       }))
     );
 
-    const summary = await importUploadedFiles(inputs);
+    const summary = await stageUploadedFiles(inputs);
 
     return NextResponse.json({
       ok: summary.ok,
       message: summary.ok
-        ? `Upload processado: ${summary.importedFiles} arquivo(s) importado(s), ${summary.importedRows} linha(s) nova(s)`
-        : 'Upload processado com erros',
+        ? `Upload processado em staging: ${summary.importedFiles} arquivo(s), ${summary.importedRows} linha(s) validadas`
+        : 'Upload processado com erros de staging',
       importedFiles: summary.importedFiles,
       importedRows: summary.importedRows,
       skippedFiles: summary.skippedFiles,
       skippedRows: summary.skippedRows,
+      rejectedRows: summary.rejectedRows,
       errors: summary.errors,
       files: summary.files,
     });
@@ -76,6 +77,7 @@ export async function POST(request: NextRequest) {
         importedRows: 0,
         skippedFiles: 0,
         skippedRows: 0,
+        rejectedRows: 0,
         files: [],
         errors: [{ file: 'general', message: errMsg }],
       },

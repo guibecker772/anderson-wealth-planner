@@ -33,6 +33,29 @@ enum ImportMode {
   MANUAL_UPLOAD
 }
 
+enum DriveSyncRunTrigger {
+  MANUAL
+  SCHEDULED
+}
+
+enum DriveSyncRunStatus {
+  RUNNING
+  SUCCEEDED
+  PARTIAL
+  FAILED
+  SKIPPED_LOCKED
+}
+
+enum DriveSyncExecutionStatus {
+  PENDING
+  RUNNING
+  SUCCEEDED
+  SKIPPED_ALREADY_PROCESSED
+  SKIPPED_LOCKED
+  DEFERRED_STABILITY
+  FAILED
+}
+
 enum SourceFileKind {
   OPERATIONAL
   FINES
@@ -47,6 +70,31 @@ enum ImportBatchKind {
   FINANCIAL_LEDGER
   FINE_LEDGER
   WORKBOOK_MULTI_SHEET
+}
+
+enum ImportPipelineStatus {
+  UPLOADED
+  PARSED
+  VALIDATED
+  REJECTED
+  PUBLISHED
+}
+
+enum ImportRecordType {
+  OPERATIONAL_SNAPSHOT
+  FINANCIAL_ENTRY
+  FINE_RECORD
+  FINE_RESPONSIBILITY
+  RECONCILIATION
+  UNSUPPORTED
+}
+
+enum ImportRowKind {
+  DETAIL
+  SECTION_LABEL
+  SUBTOTAL
+  RECONCILIATION
+  UNKNOWN
 }
 
 enum FinancialEntryDomain {
@@ -224,10 +272,26 @@ model ImportBatch {
   batchKey             String                @unique
   kind                 ImportBatchKind       @default(OPERATIONAL_SNAPSHOT)
   status               ProcessingStatus      @default(PENDING)
+  pipelineStatus       ImportPipelineStatus  @default(UPLOADED)
   startedAt            DateTime              @default(now())
+  parsedAt             DateTime?
+  validatedAt          DateTime?
+  rejectedAt           DateTime?
+  publishedAt          DateTime?
   completedAt          DateTime?
+  uploadCount          Int                   @default(0)
+  fileCount            Int                   @default(0)
+  rowCount             Int                   @default(0)
+  normalizedRowCount   Int                   @default(0)
+  rejectedRowCount     Int                   @default(0)
+  publishedRowCount    Int                   @default(0)
+  templateVersion      String?
   errorMessage         String?
+  validationMessages   Json?
   details              Json?
+  importFiles          ImportFile[]
+  rawRows              ImportRowRaw[]        @relation("ImportBatchRawRows")
+  normalizedRows       ImportRowNormalized[] @relation("ImportBatchNormalizedRows")
   sourceFiles          SourceFile[]
   operationalSnapshots OperationalSnapshot[]
   financialEntries     FinancialEntry[]
@@ -238,7 +302,212 @@ model ImportBatch {
   updatedAt DateTime @updatedAt
 
   @@index([kind, status])
+  @@index([pipelineStatus])
   @@index([startedAt])
+}
+
+model ImportFile {
+  id                 String                @id @default(cuid())
+  importBatchId      String
+  driveImportFolderId String?
+  status             ImportPipelineStatus  @default(UPLOADED)
+  name               String
+  checksum           String                @unique
+  externalFileId     String?
+  externalModifiedTime DateTime?
+  fileExtension      String?
+  kind               SourceFileKind        @default(UNKNOWN)
+  importMode         ImportMode            @default(MANUAL_UPLOAD)
+  source             SourceType            @default(LOCAL)
+  templateVersion    String?
+  originalPath       String?
+  uploadedAt         DateTime              @default(now())
+  parsedAt           DateTime?
+  validatedAt        DateTime?
+  rejectedAt         DateTime?
+  publishedAt        DateTime?
+  totalRows          Int                   @default(0)
+  parsedRows         Int                   @default(0)
+  validatedRows      Int                   @default(0)
+  rejectedRows       Int                   @default(0)
+  publishedRows      Int                   @default(0)
+  warningCount       Int                   @default(0)
+  errorCount         Int                   @default(0)
+  sourceSheets       Json?
+  validationMessages Json?
+  details            Json?
+  importBatch        ImportBatch           @relation(fields: [importBatchId], references: [id], onDelete: Cascade)
+  driveImportFolder  DriveImportFolder?    @relation(fields: [driveImportFolderId], references: [id], onDelete: SetNull)
+  rawRows            ImportRowRaw[]        @relation("ImportFileRawRows")
+  normalizedRows     ImportRowNormalized[] @relation("ImportFileNormalizedRows")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([importBatchId])
+  @@index([driveImportFolderId])
+  @@index([status])
+  @@index([kind])
+  @@index([externalFileId])
+  @@index([uploadedAt])
+}
+
+model DriveImportFolder {
+  id                   String       @id @default(cuid())
+  label                String
+  folderId             String
+  sharedDriveId        String?
+  enabled              Boolean      @default(true)
+  templateVersion      String?
+  syncLeaseToken       String?
+  syncLeaseExpiresAt   DateTime?
+  lastScannedAt        DateTime?
+  lastSuccessfulSyncAt DateTime?
+  lastSeenModifiedTime DateTime?
+  lastSeenFileId       String?
+  consecutiveFailures  Int          @default(0)
+  lastAlertedAt        DateTime?
+  lastRunStatus        DriveSyncRunStatus?
+  lastRunFinishedAt    DateTime?
+  errorMessage         String?
+  details              Json?
+  importFiles          ImportFile[]
+  syncRuns             DriveSyncRun[]
+  syncExecutions       DriveSyncExecution[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([folderId, sharedDriveId])
+  @@index([enabled, updatedAt])
+  @@index([syncLeaseExpiresAt])
+}
+
+model DriveSyncRun {
+  id                  String             @id @default(cuid())
+  driveImportFolderId String
+  leaseToken          String
+  trigger             DriveSyncRunTrigger @default(SCHEDULED)
+  status              DriveSyncRunStatus @default(RUNNING)
+  startedAt           DateTime           @default(now())
+  completedAt         DateTime?
+  filesDiscovered     Int                @default(0)
+  filesImported       Int                @default(0)
+  filesSkipped        Int                @default(0)
+  filesErrored        Int                @default(0)
+  filesDeferred       Int                @default(0)
+  retryCount          Int                @default(0)
+  alertCount          Int                @default(0)
+  errorMessage        String?
+  details             Json?
+  driveImportFolder   DriveImportFolder  @relation(fields: [driveImportFolderId], references: [id], onDelete: Cascade)
+  executions          DriveSyncExecution[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([driveImportFolderId, startedAt])
+  @@index([status, startedAt])
+}
+
+model DriveSyncExecution {
+  id                   String                   @id @default(cuid())
+  driveImportFolderId  String
+  driveSyncRunId       String?
+  externalFileId       String
+  externalModifiedTime DateTime
+  fileName             String
+  checksumHint         String?
+  status               DriveSyncExecutionStatus @default(PENDING)
+  leaseToken           String?
+  leaseExpiresAt       DateTime?
+  attempts             Int                      @default(0)
+  retryCount           Int                      @default(0)
+  stableAfter          DateTime?
+  lastAttemptAt        DateTime?
+  completedAt          DateTime?
+  errorMessage         String?
+  importBatchId        String?
+  importFileId         String?
+  details              Json?
+  driveImportFolder    DriveImportFolder        @relation(fields: [driveImportFolderId], references: [id], onDelete: Cascade)
+  driveSyncRun         DriveSyncRun?            @relation(fields: [driveSyncRunId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([externalFileId, externalModifiedTime])
+  @@index([driveImportFolderId, status])
+  @@index([driveSyncRunId])
+  @@index([leaseExpiresAt])
+}
+
+model ImportRowRaw {
+  id                 String               @id @default(cuid())
+  importBatchId      String
+  importFileId       String
+  status             ImportPipelineStatus @default(PARSED)
+  recordType         ImportRecordType
+  rowKind            ImportRowKind        @default(DETAIL)
+  sourceSheetName    String
+  sourceRowNumber    Int
+  headerFingerprint  String?
+  rawLineKey         String               @unique
+  dedupeKey          String?
+  businessKey        String?
+  rawPayload         Json
+  validationMessages Json?
+  errorMessage       String?
+  importBatch        ImportBatch          @relation("ImportBatchRawRows", fields: [importBatchId], references: [id], onDelete: Cascade)
+  importFile         ImportFile           @relation("ImportFileRawRows", fields: [importFileId], references: [id], onDelete: Cascade)
+  normalizedRow      ImportRowNormalized?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([importFileId, sourceSheetName, sourceRowNumber])
+  @@index([importBatchId])
+  @@index([status])
+  @@index([recordType])
+  @@index([rowKind])
+  @@index([dedupeKey])
+  @@index([businessKey])
+}
+
+model ImportRowNormalized {
+  id                   String               @id @default(cuid())
+  importBatchId        String
+  importFileId         String
+  importRowRawId       String               @unique
+  status               ImportPipelineStatus @default(VALIDATED)
+  recordType           ImportRecordType
+  rowKind              ImportRowKind        @default(DETAIL)
+  sourceSheetName      String
+  sourceRowNumber      Int
+  normalizedLineKey    String               @unique
+  dedupeKey            String?
+  businessKey          String?
+  normalizationVersion String?
+  publishable          Boolean              @default(false)
+  normalizedPayload    Json
+  validationMessages   Json?
+  errorMessage         String?
+  publishedRecordId    String?
+  publishedAt          DateTime?
+  importBatch          ImportBatch          @relation("ImportBatchNormalizedRows", fields: [importBatchId], references: [id], onDelete: Cascade)
+  importFile           ImportFile           @relation("ImportFileNormalizedRows", fields: [importFileId], references: [id], onDelete: Cascade)
+  importRowRaw         ImportRowRaw         @relation(fields: [importRowRawId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([importBatchId])
+  @@index([status])
+  @@index([recordType])
+  @@index([rowKind])
+  @@index([publishable])
+  @@index([dedupeKey])
+  @@index([businessKey])
 }
 
 model Investor {
@@ -256,15 +525,15 @@ model Investor {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  name         String
-  role         UserRole @default(INVESTOR)
-  investorId   String?
-  active       Boolean  @default(true)
-  firstLogin   Boolean  @default(true)
-  investor     Investor? @relation(fields: [investorId], references: [id], onDelete: SetNull)
+  id                String     @id @default(cuid())
+  email             String     @unique
+  passwordHash      String
+  name              String
+  role              UserRole   @default(INVESTOR)
+  investorId        String?
+  active            Boolean    @default(true)
+  firstLogin        Boolean    @default(true)
+  investor          Investor?  @relation(fields: [investorId], references: [id], onDelete: SetNull)
   auditLogsAsActor  AuditLog[] @relation("AuditActor")
   auditLogsAsTarget AuditLog[] @relation("AuditTarget")
 
@@ -276,7 +545,7 @@ model User {
 }
 
 model AuditLog {
-  id               String   @id @default(cuid())
+  id               String  @id @default(cuid())
   action           String
   actorUserId      String?
   actorRole        String?
@@ -285,8 +554,8 @@ model AuditLog {
   metadata         Json?
   ip               String?
   userAgent        String?
-  actorUser        User?    @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
-  targetUser       User?    @relation("AuditTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+  actorUser        User?   @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  targetUser       User?   @relation("AuditTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
 

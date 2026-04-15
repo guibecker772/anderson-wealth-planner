@@ -10,6 +10,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getInvestorList } from '@/lib/analytics/investor-metrics';
 import { parseDateRangeFromSearchParams } from '@/lib/dateRange';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
